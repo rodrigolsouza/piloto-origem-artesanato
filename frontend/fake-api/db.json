@@ -1,3 +1,61 @@
 {
-  "products": []
+  "products": [
+    {
+      "id": "prod-001",
+      "sku": "CAR-BAR-001",
+      "titulo": "Trio de Forrozeiros em Cerâmica de Barro — Edição Caruaru",
+      "descricao": "Conjunto tradicional esculpido à mão em barro cozido com acabamento policromado fosco. Cada figura representa os mestres do baião: sanfona de oito baixos, zabumba de couro e triângulo de ferro. Uma homenagem viva ao legado do Alto do Moura.",
+      "materiaPrima": "Argila regional e pigmento mineral",
+      "tecnica": "Modelagem manual figurativa vitrificada",
+      "regiaoProducao": "Caruaru, PE",
+      "categoria": "Cerâmica Tradicional",
+      "preco": 140.0,
+      "tipo": "unico",
+      "quantidadeEstoque": 1,
+      "idArtesao": "art-001",
+      "nomeArtesao": "Severino Vitalino",
+      "dimensoes": {
+        "altura": 22,
+        "largura": 16,
+        "profundidade": 12,
+        "peso": 1.4
+      },
+      "guiaCuidados": "Limpar delicadamente com pano de algodão seco ou pincel macio. Não submergir em água nem usar produtos abrasivos. Evitar quedas.",
+      "galeriaImagens": [
+        "https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?auto=format&fit=crop&w=1000&q=80",
+        "https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?auto=format&fit=crop&w=1000&q=80",
+        "https://images.unsplash.com/photo-1581783342308-f792dbdd27c5?auto=format&fit=crop&w=1000&q=80",
+        "https://images.unsplash.com/photo-1615529182904-14819c35db37?auto=format&fit=crop&w=1000&q=80"
+      ],
+      "prazoProducao": 0,
+      "ativo": true
+    },
+    {
+      "id": "prod-002",
+      "sku": "BEZ-XIL-002",
+      "titulo": "Xilogravura O Pavão Misterioso",
+      "descricao": "Matriz em umburana impressa em papel artesanal.",
+      "materiaPrima": "Madeira de umburana e papel craft",
+      "tecnica": "Xilogravura",
+      "regiaoProducao": "Bezerros, PE",
+      "categoria": "Gravura",
+      "preco": 85.0,
+      "tipo": "lote",
+      "quantidadeEstoque": 0,
+      "idArtesao": "art-002",
+      "nomeArtesao": "Escola J. Borges",
+      "dimensoes": {
+        "altura": 40,
+        "largura": 30,
+        "profundidade": 0.2,
+        "peso": 0.1
+      },
+      "guiaCuidados": "Manter longe de luz solar direta.",
+      "galeriaImagens": [
+        "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&w=1000&q=80"
+      ],
+      "prazoProducao": 3,
+      "ativo": false
+    }
+  ]
 }
