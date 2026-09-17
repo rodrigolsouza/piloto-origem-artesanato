@@ -9,7 +9,7 @@
       "tecnica": "Modelagem manual figurativa vitrificada",
       "regiaoProducao": "Caruaru, PE",
       "categoria": "Cerâmica Tradicional",
-      "preco": 140.0,
+      "preco": 140,
       "tipo": "unico",
       "quantidadeEstoque": 1,
       "idArtesao": "art-001",
@@ -39,7 +39,7 @@
       "tecnica": "Xilogravura",
       "regiaoProducao": "Bezerros, PE",
       "categoria": "Gravura",
-      "preco": 85.0,
+      "preco": 85,
       "tipo": "lote",
       "quantidadeEstoque": 0,
       "idArtesao": "art-002",
@@ -56,6 +56,35 @@
       ],
       "prazoProducao": 3,
       "ativo": false
+    },
+    {
+      "sku": "UNI-1789678161781",
+      "titulo": "Escultura o sanfoneiro de Barro",
+      "descricao": "trata-se de uma peça com valor afetivo muito grande",
+      "materiaPrima": "Matéria-prima regional",
+      "tecnica": "Artesanato Tradicional",
+      "regiaoProducao": "Olinda",
+      "categoria": "Cerâmica",
+      "preco": 350,
+      "tipo": "unico",
+      "quantidadeEstoque": 1,
+      "idArtesao": "art-atual",
+      "nomeArtesao": "Mestre Artesão",
+      "dimensoes": {
+        "altura": 10,
+        "largura": 10,
+        "profundidade": 10,
+        "peso": 0.5
+      },
+      "guiaCuidados": "Manusear com cuidado e manter protegido de umidade excessiva.",
+      "galeriaImagens": [
+        "https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?auto=format&fit=crop&w=800&q=80"
+      ],
+      "prazoProducao": 0,
+      "ativo": true,
+      "dataCriacao": "2026-09-17T20:49:21.782Z",
+      "id": "AURCqonA3G4"
     }
-  ]
+  ],
+  "$schema": "./node_modules/json-server/schema.json"
 }
