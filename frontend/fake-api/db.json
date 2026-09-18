@@ -58,32 +58,87 @@
       "ativo": false
     },
     {
-      "sku": "UNI-1789678161781",
-      "titulo": "Escultura o sanfoneiro de Barro",
-      "descricao": "trata-se de uma peça com valor afetivo muito grande",
-      "materiaPrima": "Matéria-prima regional",
-      "tecnica": "Artesanato Tradicional",
-      "regiaoProducao": "Olinda",
+      "id": "prod-003",
+      "sku": "UNI-6686",
+      "titulo": "Trio de Pífanos em Barro Figurativo",
+      "descricao": "Conjunto escultórico autoral que homenageia as tradicionais bandas de pífano do agreste pernambucano, modelado à mão em argila pura e finalizado com pintura crua.",
+      "materiaPrima": "Barro massapê cozido",
+      "tecnica": "Modelagem manual figurativa",
+      "regiaoProducao": "Caruaru, PE",
       "categoria": "Cerâmica",
-      "preco": 350,
+      "preco": 220,
       "tipo": "unico",
       "quantidadeEstoque": 1,
-      "idArtesao": "art-atual",
-      "nomeArtesao": "Mestre Artesão",
+      "idArtesao": "art-001",
+      "nomeArtesao": "Mestre Vitalino Neto",
       "dimensoes": {
-        "altura": 10,
-        "largura": 10,
-        "profundidade": 10,
-        "peso": 0.5
+        "altura": 22,
+        "largura": 18,
+        "profundidade": 14,
+        "peso": 1.5
       },
-      "guiaCuidados": "Manusear com cuidado e manter protegido de umidade excessiva.",
+      "guiaCuidados": "Limpar delicadamente com pincel seco. Manter longe de umidade.",
       "galeriaImagens": [
         "https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?auto=format&fit=crop&w=800&q=80"
       ],
       "prazoProducao": 0,
+      "ativo": true
+    },
+    {
+      "id": "prod-004",
+      "sku": "LOT-1848",
+      "titulo": "Tigela Cerâmica Vitrificada Massapê",
+      "descricao": "Linha de utensílios utilitários inspirados nos traços artesanais de Caruaru. Cada tigela passa por acabamento cerâmico vitrificado fosco e dupla queima a lenha.",
+      "materiaPrima": "Argila regional e esmalte fosco",
+      "tecnica": "Torno cerâmico e queima a lenha",
+      "regiaoProducao": "Caruaru, PE",
+      "categoria": "Cerâmica Tradicional",
+      "preco": 75,
+      "tipo": "lote",
+      "quantidadeEstoque": 25,
+      "prazoProducao": 7,
+      "idArtesao": "art-001",
+      "nomeArtesao": "Severino Vitalino",
+      "dimensoes": {
+        "altura": 12,
+        "largura": 20,
+        "profundidade": 20,
+        "peso": 0.7
+      },
+      "guiaCuidados": "Pode ir ao micro-ondas. Lavar com esponja macia e sabão neutro.",
+      "galeriaImagens": [
+        "https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1615529182904-14819c35db37?auto=format&fit=crop&w=800&q=80"
+      ],
+      "ativo": true
+    },
+    {
+      "id": "1qFBq3hHlzc",
+      "sku": "UNI-1029",
+      "titulo": "Leão da Ribeira Esculpido em Madeira",
+      "descricao": "Obra única entalhada manualmente em bloco de madeira de reaproveitamento, retratando o icónico leão das ladeiras históricas de Olinda com acabamento encerado natural.",
+      "materiaPrima": "Madeira maciça nobre recuperada",
+      "tecnica": "Entalhe manual em formão e goiva",
+      "regiaoProducao": "Olinda, PE",
+      "categoria": "Madeira",
+      "preco": 380,
+      "tipo": "unico",
+      "quantidadeEstoque": 1,
+      "idArtesao": "art-001",
+      "nomeArtesao": "Mestre Saúba",
+      "dimensoes": {
+        "altura": 35,
+        "largura": 20,
+        "profundidade": 15,
+        "peso": 2.8
+      },
+      "guiaCuidados": "Proteger da exposição direta ao sol e chuva. Aplicar cera incolor de carnaúba anualmente.",
+      "galeriaImagens": [
+        "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=800&q=80](https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=800&q=80)"
+      ],
+      "prazoProducao": 0,
       "ativo": true,
-      "dataCriacao": "2026-09-17T20:49:21.782Z",
-      "id": "AURCqonA3G4"
+      "dataCriacao": "2026-09-18T04:06:11.030Z"
     }
   ],
   "$schema": "./node_modules/json-server/schema.json"

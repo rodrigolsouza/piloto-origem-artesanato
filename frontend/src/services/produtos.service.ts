@@ -1,52 +1,78 @@
-import { CriarProdutoDTO, Produto } from '@/types/produto';
+import { Produto, CriarProdutoDTO } from '@/types/produto';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 export const produtosService = {
-  // Busca produto individual pelo ID (GET /products/:id)
-  async obterPorId(id: string): Promise<Produto | null> {
+  async listar(): Promise<Produto[]> {
     try {
-      const response = await fetch(`${API_URL}/produtos/${id}`, {
-        cache: 'no-store',
-      });
-
-      if (!response.ok) {
-        if (response.status === 404) return null;
-        throw new Error('Falha ao carregar os dados do produto.');
-      }
-
-      const produto: Produto = await response.json();
-      return produto;
-    } catch (error) {
-      console.error(`Erro ao buscar produto ${id}:`, error);
-      throw error;
+      const res = await fetch(`${API_BASE_URL}/produtos`, { cache: 'no-store' });
+      if (!res.ok) return [];
+      return await res.json();
+    } catch {
+      return [];
     }
   },
 
-  // Cadastra um novo produto no catálogo (POST /products)
-  async criar(payload: CriarProdutoDTO): Promise<Produto> {
+  async obterPorId(id: string): Promise<Produto | null> {
     try {
-      const response = await fetch(`${API_URL}/produtos`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...payload,
-          // Garante a geração de metadados se o servidor mock não os gerar
-          dataCriacao: new Date().toISOString(),
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Falha ao cadastrar produto na API.');
-      }
-
-      const novoProduto: Produto = await response.json();
-      return novoProduto;
-    } catch (error) {
-      console.error('Erro ao enviar novo produto para o servidor:', error);
-      throw error;
+      const res = await fetch(`${API_BASE_URL}/produtos/${id}`, { cache: 'no-store' });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
     }
+  },
+
+  async criar(payload: CriarProdutoDTO): Promise<Produto> {
+    // 1. Busca todos os produtos para calcular o próximo número sequencial
+    const produtos = await this.listar();
+
+    let proximoNumero = 1;
+    produtos.forEach((prod) => {
+      const match = prod.id?.match(/^prod-(\d+)$/i);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        if (num >= proximoNumero) {
+          proximoNumero = num + 1;
+        }
+      }
+    });
+
+    const proximoId = `prod-${String(proximoNumero).padStart(3, '0')}`;
+
+    // 2. Padroniza o SKU caso venha vazio ou informado (ex: car-bar-005 ou lot-005)
+    const prefixo = payload.tipo === 'unico' ? 'car-bar' : 'lot';
+    const skuFinal = payload.sku?.trim() 
+      ? payload.sku.trim().toLowerCase() 
+      : `${prefixo}-${String(proximoNumero).padStart(3, '0')}`;
+
+    const objetoCompleto = {
+      ...payload,
+      id: proximoId,
+      sku: skuFinal,
+    };
+
+    // 3. Envia o POST com o ID explícito
+    const res = await fetch(`${API_BASE_URL}/produtos`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(objetoCompleto),
+    });
+
+    if (!res.ok) {
+      throw new Error('Falha ao registrar produto na Fake API.');
+    }
+
+    const produtoSalvo = await res.json();
+
+    // 4. Se o JSON Server v1 insistiu em trocar o ID por um hash interno,
+    // garantimos que o retorno use o ID sequencial pretendido:
+    return {
+      ...produtoSalvo,
+      id: objetoCompleto.id,
+      sku: objetoCompleto.sku,
+    };
   },
 };

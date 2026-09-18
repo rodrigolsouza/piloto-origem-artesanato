@@ -23,12 +23,16 @@ export default async function ProdutoDetalhePage({ params }: ProdutoPageProps) {
   return (
     <Box maxW="7xl" mx="auto" px={{ base: 4, lg: 8 }} py={8}>
       <Box mb={6}>
-        <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 600, color: '#718096' }}>
+        <Link 
+          href="/" 
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 600, color: '#718096' }}
+        >
           <ArrowLeft size={14} /> Voltar para a vitrine
         </Link>
       </Box>
 
-      <Grid templateColumns={{ base: '1fr', lg: 'repeat(12, 1fr)' }} gap={10} mb={10} alignItems="start">
+      {/* Linha Superior: Galeria + Card de Compra */}
+      <Grid templateColumns={{ base: '1fr', lg: 'repeat(12, 1fr)' }} gap={8} mb={8} alignItems="start">
         <Box gridColumn={{ lg: 'span 7' }}>
           <ProductGallery imagens={produto.galeriaImagens} titulo={produto.titulo} />
         </Box>
@@ -38,7 +42,8 @@ export default async function ProdutoDetalhePage({ params }: ProdutoPageProps) {
         </Box>
       </Grid>
 
-      <Grid templateColumns={{ base: '1fr', lg: 'repeat(12, 1fr)' }} gap={8}>
+      {/* Linha Inferior: História Cultural + Especificações Técnicas */}
+      <Grid templateColumns={{ base: '1fr', lg: 'repeat(12, 1fr)' }} gap={8} alignItems="start">
         <Box gridColumn={{ lg: 'span 7' }} bg="white" p={6} borderRadius="2xl" borderWidth="1px" borderColor="gray.200" boxShadow="sm">
           <Text fontSize="sm" fontWeight="bold" color="gray.900" mb={3} pb={2} borderBottomWidth="1px" borderColor="gray.100">
             História & Significado Cultural

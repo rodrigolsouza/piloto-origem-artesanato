@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { 
   Box, 
   Flex, 
@@ -14,10 +14,10 @@ import {
   FormLabel, 
   Alert, 
   AlertIcon, 
-  Badge 
+  Badge,
+  useToast
 } from '@chakra-ui/react';
 import { 
-  CheckCircle2, 
   Image as ImageIcon, 
   Lock, 
   Bold, 
@@ -26,7 +26,8 @@ import {
   Link2, 
   Eye, 
   TrendingUp, 
-  HelpCircle 
+  HelpCircle,
+  Check
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { ProductCard } from '@/components/produto/ProductCard';
@@ -34,6 +35,9 @@ import { produtosService } from '@/services/produtos.service';
 import { CriarProdutoDTO } from '@/types/produto';
 
 export default function NovoProdutoUnicoPage() {
+  const router = useRouter();
+  const toast = useToast();
+
   const [titulo, setTitulo] = useState('');
   const [categoria, setCategoria] = useState('Cerâmica');
   const [regiaoProducao, setRegiaoProducao] = useState('Caruaru, PE');
@@ -54,7 +58,6 @@ export default function NovoProdutoUnicoPage() {
 
   const [erroValidacao, setErroValidacao] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(false);
-  const [produtoCriadoId, setProdutoCriadoId] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,8 +77,11 @@ export default function NovoProdutoUnicoPage() {
     try {
       setCarregando(true);
 
-      const payload: CriarProdutoDTO = {
-        sku: sku.trim() || `UNI-${Date.now()}`,
+      const novoId = `prod-${Date.now().toString().slice(-3)}`;
+
+      const payload: CriarProdutoDTO & { id: string } = {
+        id: novoId,
+        sku: sku.trim() || `UNI-${Date.now().toString().slice(-4)}`,
         titulo: titulo.trim(),
         descricao: descricao.trim(),
         materiaPrima: materiaPrima.trim() || 'Argila regional cozida',
@@ -83,10 +89,10 @@ export default function NovoProdutoUnicoPage() {
         regiaoProducao,
         categoria,
         preco: parseFloat(preco),
-        tipo: 'unico', // Regra da HU-17: Modalidade exclusiva
-        quantidadeEstoque: 1, // Regra da HU-17: Estoque fixo em 1
+        tipo: 'unico', // Modalidade exclusiva
+        quantidadeEstoque: 1, // Estoque fixo em 1
         idArtesao: 'art-001',
-        nomeArtesao: nomeArtesao.trim() || 'Mestre de Tradição',
+        nomeArtesao: nomeArtesao.trim() || 'Severino Vitalino',
         dimensoes: {
           altura: parseFloat(altura) || 15,
           largura: parseFloat(largura) || 15,
@@ -102,7 +108,16 @@ export default function NovoProdutoUnicoPage() {
       };
 
       const novoProduto = await produtosService.criar(payload);
-      setProdutoCriadoId(novoProduto.id);
+
+      toast({
+        title: 'Peça Única cadastrada com sucesso!',
+        description: `${novoProduto.titulo} já está disponível na vitrine.`,
+        status: 'success',
+        duration: 3500,
+        isClosable: true,
+      });
+
+      router.push(`/produtos/${novoProduto.id}`);
     } catch (err) {
       setErroValidacao('Erro ao conectar com a Fake API. Verifique se o comando npm run api está ativo.');
     } finally {
@@ -110,46 +125,11 @@ export default function NovoProdutoUnicoPage() {
     }
   };
 
-  // Feedback de Sucesso (PI4-90)
-  if (produtoCriadoId) {
-    return (
-      <Flex minH="80vh" align="center" justify="center" px={4}>
-        <Box maxW="md" w="full" bg="white" p={8} borderRadius="2xl" borderWidth="1px" borderColor="gray.200" textAlign="center" boxShadow="sm">
-          <Flex w={16} h={16} bg="green.50" color="green.600" borderRadius="full" align="center" justify="center" mx="auto" mb={4}>
-            <CheckCircle2 size={36} />
-          </Flex>
-          <Text fontSize="lg" fontWeight="bold" color="gray.900" mb={2}>
-            Peça Única Cadastrada!
-          </Text>
-          <Text fontSize="xs" color="gray.600" mb={6}>
-            A obra <strong>{titulo}</strong> foi registrada no catálogo com estoque exclusivo de 1 unidade.
-          </Text>
-          <Flex direction="column" gap={3}>
-            <Link href={`/produtos/${produtoCriadoId}`}>
-              <Button variantStyle="primary" w="full">Visualizar na Vitrine</Button>
-            </Link>
-            <Button
-              variantStyle="secondary"
-              onClick={() => {
-                setProdutoCriadoId(null);
-                setTitulo('');
-                setDescricao('');
-                setPreco('');
-              }}
-            >
-              Cadastrar Nova Peça
-            </Button>
-          </Flex>
-        </Box>
-      </Flex>
-    );
-  }
-
   return (
     <Box maxW="7xl" mx="auto" px={{ base: 4, lg: 8 }} py={8}>
       <Grid templateColumns={{ base: '1fr', lg: 'repeat(12, 1fr)' }} gap={8} alignItems="start">
         
-        {/* Coluna Esquerda: Stepper / Progresso */}
+        {/* Coluna Esquerda: Stepper / Progresso com Ícone de Check */}
         <Box as="aside" gridColumn={{ lg: 'span 3' }}>
           <Box bg="white" borderRadius="xl" borderWidth="1px" borderColor="gray.200" p={5} position="sticky" top="20px">
             <Text fontWeight="bold" fontSize="sm" color="gray.900" mb={1}>
@@ -161,23 +141,25 @@ export default function NovoProdutoUnicoPage() {
 
             <Flex direction="column" gap={4} fontSize="xs" color="gray.600">
               <Flex align="center" gap={2.5} fontWeight="bold" color="gray.900">
-                <Flex w={6} h={6} borderRadius="full" bg="brand.yellow" color="brand.dark" align="center" justify="center" fontSize="2xs">1</Flex>
+                <Flex w={5} h={5} borderRadius="full" bg="brand.yellow" color="brand.dark" align="center" justify="center">
+                  <Check size={12} strokeWidth={3} />
+                </Flex>
                 Informações Básicas
               </Flex>
               <Flex align="center" gap={2.5}>
-                <Flex w={6} h={6} borderRadius="full" bg="gray.100" color="gray.600" align="center" justify="center" fontSize="2xs">2</Flex>
+                <Flex w={5} h={5} borderRadius="full" bg="gray.100" color="gray.600" align="center" justify="center" fontSize="2xs">2</Flex>
                 Fotos da Peça
               </Flex>
               <Flex align="center" gap={2.5}>
-                <Flex w={6} h={6} borderRadius="full" bg="gray.100" color="gray.600" align="center" justify="center" fontSize="2xs">3</Flex>
+                <Flex w={5} h={5} borderRadius="full" bg="gray.100" color="gray.600" align="center" justify="center" fontSize="2xs">3</Flex>
                 História & Descrição
               </Flex>
               <Flex align="center" gap={2.5}>
-                <Flex w={6} h={6} borderRadius="full" bg="gray.100" color="gray.600" align="center" justify="center" fontSize="2xs">4</Flex>
+                <Flex w={5} h={5} borderRadius="full" bg="gray.100" color="gray.600" align="center" justify="center" fontSize="2xs">4</Flex>
                 Materiais & Dimensões
               </Flex>
               <Flex align="center" gap={2.5}>
-                <Flex w={6} h={6} borderRadius="full" bg="gray.100" color="gray.600" align="center" justify="center" fontSize="2xs">5</Flex>
+                <Flex w={5} h={5} borderRadius="full" bg="gray.100" color="gray.600" align="center" justify="center" fontSize="2xs">5</Flex>
                 Preço & Estoque Único
               </Flex>
             </Flex>
@@ -391,8 +373,9 @@ export default function NovoProdutoUnicoPage() {
                 </Grid>
               </Box>
 
+              {/* Botão com Cor Preta Institucional */}
               <Flex justify="flex-end">
-                <Button type="submit" variantStyle="accent" isLoading={carregando}>
+                <Button type="submit" variantStyle="primary" isLoading={carregando}>
                   Publicar Peça Única
                 </Button>
               </Flex>
@@ -400,7 +383,7 @@ export default function NovoProdutoUnicoPage() {
           </form>
         </Box>
 
-        {/* Coluna Direita: Live Preview com o componente ProductCard */}
+        {/* Coluna Direita: Live Preview */}
         <Box as="aside" gridColumn={{ lg: 'span 3' }}>
           <Box bg="white" borderRadius="xl" borderWidth="1px" borderColor="gray.200" p={5} position="sticky" top="20px">
             <Flex justify="space-between" align="center" mb={3}>
@@ -410,7 +393,6 @@ export default function NovoProdutoUnicoPage() {
               <Text fontSize="2xs" color="gray.400">Tempo real</Text>
             </Flex>
 
-            {/* Reuso do Componente ProductCard */}
             <Box mb={4}>
               <ProductCard
                 titulo={titulo || 'Título da Peça'}

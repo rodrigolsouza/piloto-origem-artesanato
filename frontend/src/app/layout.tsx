@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { ChakraProviders } from '@/components/ui/ChakraProviders';
 import { Navbar } from '@/components/layout/Navbar';
+import { Footer } from '@/components/layout/Footer';
 
 export const metadata: Metadata = {
   title: 'PernambucoCrafts - Marketplace de Artesanato',
@@ -15,10 +16,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR" suppressHydrationWarning>
-      <body suppressHydrationWarning style={{ backgroundColor: '#FAFAFA', minHeight: '100vh', margin: 0 }}>
+      <body suppressHydrationWarning style={{ backgroundColor: '#FAFAFA', minHeight: '100vh', margin: 0, display: 'flex', flexDirection: 'column' }}>
         <ChakraProviders>
           <Navbar />
-          <main>{children}</main>
+          <main style={{ flex: 1 }}>{children}</main>
+          <Footer />
         </ChakraProviders>
       </body>
     </html>
