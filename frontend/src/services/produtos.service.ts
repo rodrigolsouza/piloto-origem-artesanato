@@ -6,7 +6,7 @@ export const produtosService = {
   // Busca produto individual pelo ID (GET /products/:id)
   async obterPorId(id: string): Promise<Produto | null> {
     try {
-      const response = await fetch(`${API_URL}/products/${id}`, {
+      const response = await fetch(`${API_URL}/produtos/${id}`, {
         cache: 'no-store',
       });
 
@@ -26,7 +26,7 @@ export const produtosService = {
   // Cadastra um novo produto no catálogo (POST /products)
   async criar(payload: CriarProdutoDTO): Promise<Produto> {
     try {
-      const response = await fetch(`${API_URL}/products`, {
+      const response = await fetch(`${API_URL}/produtos`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -14,8 +14,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR">
-      <body style={{ backgroundColor: '#FAFAFA', minHeight: '100vh', margin: 0 }}>
+    <html lang="pt-BR" suppressHydrationWarning>
+      <body suppressHydrationWarning style={{ backgroundColor: '#FAFAFA', minHeight: '100vh', margin: 0 }}>
         <ChakraProviders>
           <Navbar />
           <main>{children}</main>
