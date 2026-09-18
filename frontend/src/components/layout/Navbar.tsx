@@ -3,11 +3,10 @@
 import React from 'react';
 import Link from 'next/link';
 import { Box, Flex, Text, Badge } from '@chakra-ui/react';
-import { Sparkles } from 'lucide-react';
 
 export function Navbar() {
   return (
-    <Box as="header" bg="white" borderBottomWidth="1px" borderColor="gray.200" position="sticky" top={0} zIndex={50}>
+    <header style={{ position: 'sticky', top: 0, zIndex: 50, backgroundColor: '#ffffff', borderBottom: '1px solid #E2E8F0' }}>
       <Flex maxW="7xl" mx="auto" px={{ base: 4, lg: 8 }} h="16" align="center" justify="space-between">
         <Flex align="center" gap={3}>
           <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -38,6 +37,6 @@ export function Navbar() {
           </Flex>
         </Flex>
       </Flex>
-    </Box>
+    </header>
   );
 }
