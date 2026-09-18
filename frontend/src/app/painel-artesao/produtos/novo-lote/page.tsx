@@ -119,7 +119,6 @@ export default function NovoProdutoLotePage() {
       const skuGerado = formData.sku.trim() || `LOT-${Date.now().toString().slice(-4)}`;
 
       const novoProduto = await produtosService.criar({
-        id: idGerado,
         sku: skuGerado,
         titulo: formData.titulo.trim(),
         descricao: formData.descricao.trim(),

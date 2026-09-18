@@ -29,5 +29,7 @@ export interface Produto {
   dataCriacao?: string;
 }
 
-export type CriarProdutoDTO = Omit<Produto, 'id' | 'dataCriacao'>;
+export type CriarProdutoDTO = Omit<Produto, 'id'> & {
+  id?: string;
+};
 export type AtualizarProdutoDTO = Partial<Omit<Produto, 'id' | 'idArtesao'>>;
