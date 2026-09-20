@@ -1,0 +1,2029 @@
+=== 1. ESTRUTURA DE PASTAS E ARQUIVOS ===
+.
+./AGENTS.md
+./CLAUDE.md
+./contexto_projeto.txt
+./eslint.config.mjs
+./fake-api
+./fake-api/db.json
+./gerar_contexto.sh
+./next.config.ts
+./next-env.d.ts
+./package.json
+./package-lock.json
+./postcss.config.mjs
+./public
+./public/file.svg
+./public/globe.svg
+./public/next.svg
+./public/vercel.svg
+./public/window.svg
+./README.md
+./setup.sh
+./src
+./src/app
+./src/app/admin
+./src/app/admin/artesoes
+./src/app/admin/indicadores
+./src/app/admin/pedidos
+./src/app/admin/produtos
+./src/app/artesoes
+./src/app/artesoes/[id]
+./src/app/cadastro
+./src/app/carrinho
+./src/app/favicon.ico
+./src/app/globals.css
+./src/app/layout.tsx
+./src/app/login
+./src/app/painel-artesao
+./src/app/painel-artesao/estoque
+./src/app/painel-artesao/pedidos
+./src/app/painel-artesao/produtos
+./src/app/painel-artesao/produtos/novo-lote
+./src/app/painel-artesao/produtos/novo-unico
+./src/app/pedidos
+./src/app/pedidos/[id]
+./src/app/produtos
+./src/app/produtos/[id]
+./src/app/produtos/[id]/page.tsx
+./src/components
+./src/components/artesao
+./src/components/carrinho
+./src/components/feedback
+./src/components/feedback/EmptyState.tsx
+./src/components/feedback/ErrorState.tsx
+./src/components/feedback/LoadingState.tsx
+./src/components/forms
+./src/components/layout
+./src/components/layout/Footer.tsx
+./src/components/layout/Navbar.tsx
+./src/components/pedido
+./src/components/produto
+./src/components/produto/ProductCard.tsx
+./src/components/produto/ProductDetails.tsx
+./src/components/produto/ProductFilters.tsx
+./src/components/produto/ProductGallery.tsx
+./src/components/produto/ProductInfo.tsx
+./src/components/produto/ProductList.tsx
+./src/components/produto/ProductSpecs.tsx
+./src/components/ui
+./src/components/ui/Button.tsx
+./src/components/ui/ChakraProviders.tsx
+./src/constants
+./src/hooks
+./src/mocks
+./src/mocks/produtos.mock.ts
+./src/services
+./src/services/api
+./src/services/produtos.service.ts
+./src/store
+./src/styles
+./src/styles/theme.ts
+./src/types
+./src/types/produto.ts
+./src/utils
+./tsconfig.json
+
+=== 2. ARQUIVOS DE CÓDIGO FONTE (SRC) ===
+
+========================================
+ARQUIVO: src/app/layout.tsx
+========================================
+import type { Metadata } from 'next';
+import './globals.css';
+import { ChakraProviders } from '@/components/ui/ChakraProviders';
+import { Navbar } from '@/components/layout/Navbar';
+import { Footer } from '@/components/layout/Footer';
+
+export const metadata: Metadata = {
+  title: 'PernambucoCrafts - Marketplace de Artesanato',
+  description: 'Valorizando a identidade cultural e a economia criativa de Pernambuco',
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="pt-BR" suppressHydrationWarning>
+      <body suppressHydrationWarning style={{ backgroundColor: '#FAFAFA', minHeight: '100vh', margin: 0, display: 'flex', flexDirection: 'column' }}>
+        <ChakraProviders>
+          <Navbar />
+          <main style={{ flex: 1 }}>{children}</main>
+          <Footer />
+        </ChakraProviders>
+      </body>
+    </html>
+  );
+}
+========================================
+ARQUIVO: src/app/painel-artesao/produtos/novo-lote/page.tsx
+========================================
+'use client';
+
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import {
+  Box,
+  Flex,
+  Text,
+  Grid,
+  FormControl,
+  FormLabel,
+  Input,
+  Textarea,
+  Select,
+  FormErrorMessage,
+  Badge,
+  Image,
+  useToast,
+} from '@chakra-ui/react';
+import { ArrowLeft, Check, ImageIcon, ShieldCheck, Truck } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+import { produtosService } from '@/services/produtos.service';
+
+export default function NovoProdutoLotePage() {
+  const router = useRouter();
+  const toast = useToast();
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [erros, setErros] = useState<Record<string, string>>({});
+
+  const [formData, setFormData] = useState({
+    sku: '',
+    titulo: '',
+    descricao: '',
+    categoria: 'Cerâmica Tradicional',
+    materiaPrima: '',
+    tecnica: '',
+    regiaoProducao: 'Caruaru, PE',
+    nomeArtesao: 'Severino Vitalino',
+    preco: '',
+    quantidadeEstoque: '',
+    prazoProducao: '',
+    dimensoes: {
+      altura: '',
+      largura: '',
+      profundidade: '',
+      peso: '',
+    },
+    guiaCuidados: '',
+    urlFotoPrincipal: 'https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?auto=format&fit=crop&w=800&q=80',
+    fotoAdicional1: '',
+    fotoAdicional2: '',
+    fotoAdicional3: '',
+  });
+
+  const validarFormulario = () => {
+    const novosErros: Record<string, string> = {};
+
+    if (!formData.titulo.trim()) novosErros.titulo = 'O título do lote é obrigatório';
+    if (!formData.descricao.trim()) novosErros.descricao = 'A história e significado cultural são obrigatórios';
+    if (!formData.materiaPrima.trim()) novosErros.materiaPrima = 'Informe a matéria-prima principal';
+    if (!formData.tecnica.trim()) novosErros.tecnica = 'Informe a técnica utilizada';
+
+    const precoNum = parseFloat(formData.preco.replace(',', '.'));
+    if (!formData.preco || isNaN(precoNum) || precoNum <= 0) {
+      novosErros.preco = 'Preço obrigatório';
+    }
+
+    const estoqueNum = parseInt(formData.quantidadeEstoque, 10);
+    if (!formData.quantidadeEstoque || isNaN(estoqueNum) || estoqueNum < 1) {
+      novosErros.quantidadeEstoque = 'Mínimo 1 peça';
+    }
+
+    const prazoNum = parseInt(formData.prazoProducao, 10);
+    if (formData.prazoProducao === '' || isNaN(prazoNum) || prazoNum < 0) {
+      novosErros.prazoProducao = 'Obrigatório';
+    }
+
+    if (!formData.dimensoes.altura) novosErros.altura = 'Obrigatório';
+    if (!formData.dimensoes.largura) novosErros.largura = 'Obrigatório';
+    if (!formData.dimensoes.profundidade) novosErros.profundidade = 'Obrigatório';
+    if (!formData.dimensoes.peso) novosErros.peso = 'Obrigatório';
+
+    if (!formData.urlFotoPrincipal.trim()) {
+      novosErros.urlFotoPrincipal = 'Informe a URL da foto principal';
+    }
+
+    setErros(novosErros);
+    return Object.keys(novosErros).length === 0;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!validarFormulario()) {
+      toast({
+        title: 'Verifique os campos obrigatórios',
+        description: 'Há campos pendentes no formulário de lote.',
+        status: 'error',
+        duration: 3500,
+        isClosable: true,
+      });
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+
+      const listaImagens = [
+        formData.urlFotoPrincipal.trim(),
+        formData.fotoAdicional1.trim(),
+        formData.fotoAdicional2.trim(),
+        formData.fotoAdicional3.trim(),
+      ].filter(Boolean);
+
+      // Gera ID sequencial padronizado no formato prod-xxx para garantir a rota /produtos/prod-xxx
+      const idGerado = `prod-${Date.now().toString().slice(-3)}`;
+      const skuGerado = formData.sku.trim() || `LOT-${Date.now().toString().slice(-4)}`;
+
+      const novoProduto = await produtosService.criar({
+        sku: skuGerado,
+        titulo: formData.titulo.trim(),
+        descricao: formData.descricao.trim(),
+        materiaPrima: formData.materiaPrima.trim(),
+        tecnica: formData.tecnica.trim(),
+        regiaoProducao: formData.regiaoProducao,
+        categoria: formData.categoria,
+        preco: parseFloat(formData.preco.replace(',', '.')),
+        tipo: 'lote',
+        quantidadeEstoque: parseInt(formData.quantidadeEstoque, 10),
+        prazoProducao: parseInt(formData.prazoProducao, 10),
+        idArtesao: 'art-001',
+        nomeArtesao: formData.nomeArtesao || 'Severino Vitalino',
+        dimensoes: {
+          altura: parseFloat(formData.dimensoes.altura),
+          largura: parseFloat(formData.dimensoes.largura),
+          profundidade: parseFloat(formData.dimensoes.profundidade),
+          peso: parseFloat(formData.dimensoes.peso),
+        },
+        guiaCuidados: formData.guiaCuidados.trim() || 'Limpar com pano seco ou espanador.',
+        galeriaImagens: listaImagens,
+        ativo: true,
+      });
+
+      toast({
+        title: 'Lote cadastrado com sucesso!',
+        description: `${novoProduto.titulo} já está disponível na vitrine.`,
+        status: 'success',
+        duration: 3500,
+        isClosable: true,
+      });
+
+      // Redireciona diretamente para a tela de visualização do produto criado
+      router.push(`/produtos/${novoProduto.id}`);
+    } catch (error) {
+      toast({
+        title: 'Erro de conexão',
+        description: 'Não foi possível salvar na API.',
+        status: 'error',
+        duration: 3500,
+        isClosable: true,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const steps = [
+    { label: 'Informações Básicas', status: 'active' },
+    { label: 'Fotos da Peça', status: 'pending' },
+    { label: 'História & Descrição', status: 'pending' },
+    { label: 'Materiais & Dimensões', status: 'pending' },
+    { label: 'Preço & Estoque (Lote)', status: 'pending' },
+  ];
+
+  return (
+    <Box maxW="7xl" mx="auto" px={{ base: 4, lg: 8 }} py={6}>
+      <Grid templateColumns={{ base: '1fr', lg: '220px 1fr 280px' }} gap={6} alignItems="start">
+        
+        {/* COLUNA 1: Stepper Lateral Idêntico ao Protótipo */}
+        <Box bg="white" p={4} borderRadius="xl" borderWidth="1px" borderColor="gray.200" position="sticky" top="84px">
+          <Text fontSize="xs" fontWeight="bold" color="gray.900" mb={1}>
+            Cadastro Peça / Lote
+          </Text>
+          <Text fontSize="2xs" color="gray.400" mb={4} lineHeight="short">
+            Siga as etapas para disponibilizar o lote no catálogo artesanal
+          </Text>
+
+          <Flex direction="column" gap={3}>
+            {steps.map((step, idx) => (
+              <Flex key={idx} align="center" gap={2.5}>
+                {step.status === 'active' ? (
+                  <Flex w={5} h={5} borderRadius="full" bg="brand.yellow" color="brand.dark" align="center" justify="center" fontSize="2xs" fontWeight="bold">
+                    <Check size={12} strokeWidth={3} />
+                  </Flex>
+                ) : (
+                  <Flex w={5} h={5} borderRadius="full" bg="gray.100" color="gray.500" align="center" justify="center" fontSize="2xs" fontWeight="semibold">
+                    {idx + 1}
+                  </Flex>
+                )}
+                <Text fontSize="2xs" fontWeight={step.status === 'active' ? 'bold' : 'medium'} color={step.status === 'active' ? 'gray.900' : 'gray.500'}>
+                  {step.label}
+                </Text>
+              </Flex>
+            ))}
+          </Flex>
+        </Box>
+
+        {/* COLUNA 2: Formulário Central em Cards Modulares */}
+        <Box as="form" onSubmit={handleSubmit} display="flex" flexDirection="column" gap={5}>
+          
+          {/* 1. Informações Básicas */}
+          <Box bg="white" p={5} borderRadius="xl" borderWidth="1px" borderColor="gray.200">
+            <Flex justify="space-between" align="center" mb={3}>
+              <Text fontSize="xs" fontWeight="bold" color="gray.900">
+                1. Informações Básicas
+              </Text>
+              <Badge bg="brand.yellow" color="brand.dark" fontSize="3xs" px={2} py={0.5} borderRadius="sm">
+                LOTE
+              </Badge>
+            </Flex>
+
+            <FormControl mb={3} isInvalid={!!erros.titulo}>
+              <FormLabel fontSize="2xs" fontWeight="bold" color="gray.600" mb={1}>TÍTULO DO PRODUTO *</FormLabel>
+              <Input
+                size="sm"
+                placeholder="Ex: Tigela de Cerâmica Vitrificada Tradicional"
+                value={formData.titulo}
+                onChange={(e) => setFormData({ ...formData, titulo: e.target.value })}
+                borderRadius="md"
+              />
+              <FormErrorMessage fontSize="3xs">{erros.titulo}</FormErrorMessage>
+            </FormControl>
+
+            <Grid templateColumns={{ base: '1fr', md: '1fr 1fr' }} gap={3} mb={3}>
+              <FormControl>
+                <FormLabel fontSize="2xs" fontWeight="bold" color="gray.600" mb={1}>CATEGORIA</FormLabel>
+                <Select
+                  size="sm"
+                  value={formData.categoria}
+                  onChange={(e) => setFormData({ ...formData, categoria: e.target.value })}
+                  borderRadius="md"
+                >
+                  <option value="Cerâmica Tradicional">Cerâmica Tradicional</option>
+                  <option value="Madeira e Xilogravura">Madeira e Xilogravura</option>
+                  <option value="Fibras Naturais">Fibras Naturais</option>
+                  <option value="Rendas e Bordados">Rendas e Bordados</option>
+                </Select>
+              </FormControl>
+
+              <FormControl>
+                <FormLabel fontSize="2xs" fontWeight="bold" color="gray.600" mb={1}>POLO DE ORIGEM</FormLabel>
+                <Input
+                  size="sm"
+                  value={formData.regiaoProducao}
+                  onChange={(e) => setFormData({ ...formData, regiaoProducao: e.target.value })}
+                  borderRadius="md"
+                />
+              </FormControl>
+            </Grid>
+
+            <FormControl>
+              <FormLabel fontSize="2xs" fontWeight="bold" color="gray.600" mb={1}>NOME DO ARTESÃO</FormLabel>
+              <Input
+                size="sm"
+                value={formData.nomeArtesao}
+                onChange={(e) => setFormData({ ...formData, nomeArtesao: e.target.value })}
+                borderRadius="md"
+              />
+            </FormControl>
+          </Box>
+
+          {/* 2. Fotos da Peça (Padrão Idêntico ao seu Modelo com Dropzone e Slots) */}
+          <Box bg="white" p={5} borderRadius="xl" borderWidth="1px" borderColor="gray.200">
+            <Flex justify="space-between" align="center" mb={3}>
+              <Text fontSize="xs" fontWeight="bold" color="gray.900">
+                2. Fotos da Peça
+              </Text>
+              <Text fontSize="3xs" color="gray.400">Proporção 1:1 sugerida</Text>
+            </Flex>
+
+            <FormControl mb={3} isInvalid={!!erros.urlFotoPrincipal}>
+              <FormLabel fontSize="2xs" fontWeight="bold" color="gray.600" mb={1}>URL DA IMAGEM PRINCIPAL *</FormLabel>
+              <Input
+                size="sm"
+                placeholder="https://images.unsplash.com/..."
+                value={formData.urlFotoPrincipal}
+                onChange={(e) => setFormData({ ...formData, urlFotoPrincipal: e.target.value })}
+                borderRadius="md"
+              />
+              <FormErrorMessage fontSize="3xs">{erros.urlFotoPrincipal}</FormErrorMessage>
+            </FormControl>
+
+            <Grid templateColumns={{ base: '1fr', md: '1.2fr 1fr' }} gap={4} alignItems="center">
+              {/* Box Principal Pontilhado */}
+              <Box
+                borderWidth="1.5px"
+                borderStyle="dashed"
+                borderColor="gray.300"
+                borderRadius="xl"
+                h="150px"
+                display="flex"
+                flexDirection="column"
+                alignItems="center"
+                justifyContent="center"
+                bg="gray.50"
+                overflow="hidden"
+                position="relative"
+              >
+                {formData.urlFotoPrincipal ? (
+                  <Image
+                    src={formData.urlFotoPrincipal}
+                    alt="Preview Principal"
+                    w="full"
+                    h="full"
+                    objectFit="cover"
+                  />
+                ) : (
+                  <>
+                    <ImageIcon size={26} color="#A0AEC0" />
+                    <Text fontSize="3xs" color="gray.400" mt={1}>Foto Principal / Destaque</Text>
+                  </>
+                )}
+              </Box>
+
+              {/* Slots de Fotos Adicionais Pontilhados */}
+              <Box>
+                <Text fontSize="3xs" fontWeight="bold" color="gray.500" mb={2} textTransform="uppercase">
+                  Fotos Adicionais
+                </Text>
+                <Grid templateColumns="repeat(3, 1fr)" gap={2}>
+                  {[1, 2, 3].map((num) => {
+                    const campo = `fotoAdicional${num}` as keyof typeof formData;
+                    const val = formData[campo] as string;
+                    return (
+                      <Box
+                        key={num}
+                        borderWidth="1px"
+                        borderStyle="dashed"
+                        borderColor="gray.300"
+                        borderRadius="md"
+                        h="55px"
+                        bg="gray.50"
+                        display="flex"
+                        alignItems="center"
+                        justifyContent="center"
+                        overflow="hidden"
+                      >
+                        {val ? (
+                          <Image src={val} alt={`Foto ${num}`} w="full" h="full" objectFit="cover" />
+                        ) : (
+                          <Text fontSize="3xs" color="gray.400">Foto {num + 1}</Text>
+                        )}
+                      </Box>
+                    );
+                  })}
+                </Grid>
+                <Input
+                  mt={2}
+                  size="xs"
+                  placeholder="URL Foto 2 (opcional)"
+                  value={formData.fotoAdicional1}
+                  onChange={(e) => setFormData({ ...formData, fotoAdicional1: e.target.value })}
+                  borderRadius="md"
+                />
+              </Box>
+            </Grid>
+          </Box>
+
+          {/* 3. História & Descrição */}
+          <Box bg="white" p={5} borderRadius="xl" borderWidth="1px" borderColor="gray.200">
+            <Flex justify="space-between" align="center" mb={1}>
+              <Text fontSize="xs" fontWeight="bold" color="gray.900">
+                3. História & Descrição *
+              </Text>
+              <Badge colorScheme="purple" fontSize="3xs">CULTURA PERNAMBUCANA</Badge>
+            </Flex>
+            <Text fontSize="3xs" color="gray.400" mb={3}>Contexto cultural e tradição artesanal</Text>
+
+            <FormControl isInvalid={!!erros.descricao}>
+              <Textarea
+                size="sm"
+                placeholder="Descreva a história por trás desta linha e/ou artesanato cultural..."
+                value={formData.descricao}
+                onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
+                borderRadius="md"
+                rows={3}
+              />
+              <FormErrorMessage fontSize="3xs">{erros.descricao}</FormErrorMessage>
+            </FormControl>
+          </Box>
+
+          {/* 4. Materiais & Dimensões */}
+          <Box bg="white" p={5} borderRadius="xl" borderWidth="1px" borderColor="gray.200">
+            <Text fontSize="xs" fontWeight="bold" color="gray.900" mb={3}>
+              4. Materiais & Dimensões
+            </Text>
+
+            <Grid templateColumns={{ base: '1fr', md: '1fr 1fr' }} gap={3} mb={3}>
+              <FormControl isInvalid={!!erros.materiaPrima}>
+                <FormLabel fontSize="2xs" fontWeight="bold" color="gray.600" mb={1}>MATÉRIA-PRIMA *</FormLabel>
+                <Input
+                  size="sm"
+                  placeholder="Ex: Argila e pigmento mineral"
+                  value={formData.materiaPrima}
+                  onChange={(e) => setFormData({ ...formData, materiaPrima: e.target.value })}
+                  borderRadius="md"
+                />
+                <FormErrorMessage fontSize="3xs">{erros.materiaPrima}</FormErrorMessage>
+              </FormControl>
+
+              <FormControl isInvalid={!!erros.tecnica}>
+                <FormLabel fontSize="2xs" fontWeight="bold" color="gray.600" mb={1}>TÉCNICA *</FormLabel>
+                <Input
+                  size="sm"
+                  placeholder="Ex: Modelagem manual / Queima a lenha"
+                  value={formData.tecnica}
+                  onChange={(e) => setFormData({ ...formData, tecnica: e.target.value })}
+                  borderRadius="md"
+                />
+                <FormErrorMessage fontSize="3xs">{erros.tecnica}</FormErrorMessage>
+              </FormControl>
+            </Grid>
+
+            <Grid templateColumns="repeat(4, 1fr)" gap={2} mb={3}>
+              <FormControl isInvalid={!!erros.altura}>
+                <FormLabel fontSize="3xs" color="gray.600" mb={0.5}>ALTURA (cm)</FormLabel>
+                <Input
+                  size="xs"
+                  placeholder="15"
+                  value={formData.dimensoes.altura}
+                  onChange={(e) => setFormData({ ...formData, dimensoes: { ...formData.dimensoes, altura: e.target.value } })}
+                  borderRadius="md"
+                />
+              </FormControl>
+
+              <FormControl isInvalid={!!erros.largura}>
+                <FormLabel fontSize="3xs" color="gray.600" mb={0.5}>LARGURA (cm)</FormLabel>
+                <Input
+                  size="xs"
+                  placeholder="20"
+                  value={formData.dimensoes.largura}
+                  onChange={(e) => setFormData({ ...formData, dimensoes: { ...formData.dimensoes, largura: e.target.value } })}
+                  borderRadius="md"
+                />
+              </FormControl>
+
+              <FormControl isInvalid={!!erros.profundidade}>
+                <FormLabel fontSize="3xs" color="gray.600" mb={0.5}>PROF. (cm)</FormLabel>
+                <Input
+                  size="xs"
+                  placeholder="8"
+                  value={formData.dimensoes.profundidade}
+                  onChange={(e) => setFormData({ ...formData, dimensoes: { ...formData.dimensoes, profundidade: e.target.value } })}
+                  borderRadius="md"
+                />
+              </FormControl>
+
+              <FormControl isInvalid={!!erros.peso}>
+                <FormLabel fontSize="3xs" color="gray.600" mb={0.5}>PESO (kg)</FormLabel>
+                <Input
+                  size="xs"
+                  placeholder="1.2"
+                  value={formData.dimensoes.peso}
+                  onChange={(e) => setFormData({ ...formData, dimensoes: { ...formData.dimensoes, peso: e.target.value } })}
+                  borderRadius="md"
+                />
+              </FormControl>
+            </Grid>
+
+            <FormControl>
+              <FormLabel fontSize="2xs" fontWeight="bold" color="gray.600" mb={1}>INSTRUÇÃO DE CUIDADOS</FormLabel>
+              <Input
+                size="sm"
+                placeholder="Ex: Limpar com pano seco e evitar produtos abrasivos"
+                value={formData.guiaCuidados}
+                onChange={(e) => setFormData({ ...formData, guiaCuidados: e.target.value })}
+                borderRadius="md"
+              />
+            </FormControl>
+          </Box>
+
+          {/* 5. Preço & Controle de Lote (PI4-92, PI4-93, PI4-94, PI4-95) */}
+          <Box bg="white" p={5} borderRadius="xl" borderWidth="1px" borderColor="gray.200">
+            <Text fontSize="xs" fontWeight="bold" color="gray.900" mb={3}>
+              5. Preço & Controle de Lote
+            </Text>
+
+            <Grid templateColumns="repeat(3, 1fr)" gap={3}>
+              <FormControl isInvalid={!!erros.preco}>
+                <FormLabel fontSize="2xs" fontWeight="bold" color="gray.600" mb={1}>PREÇO (R$) *</FormLabel>
+                <Input
+                  size="sm"
+                  placeholder="140,00"
+                  value={formData.preco}
+                  onChange={(e) => setFormData({ ...formData, preco: e.target.value })}
+                  borderRadius="md"
+                />
+                <FormErrorMessage fontSize="3xs">{erros.preco}</FormErrorMessage>
+              </FormControl>
+
+              <FormControl isInvalid={!!erros.quantidadeEstoque}>
+                <FormLabel fontSize="2xs" fontWeight="bold" color="gray.600" mb={1}>ESTOQUE (LOTE) *</FormLabel>
+                <Input
+                  size="sm"
+                  type="number"
+                  min="1"
+                  placeholder="10"
+                  value={formData.quantidadeEstoque}
+                  onChange={(e) => setFormData({ ...formData, quantidadeEstoque: e.target.value })}
+                  borderRadius="md"
+                />
+                <FormErrorMessage fontSize="3xs">{erros.quantidadeEstoque}</FormErrorMessage>
+              </FormControl>
+
+              <FormControl isInvalid={!!erros.prazoProducao}>
+                <FormLabel fontSize="2xs" fontWeight="bold" color="gray.600" mb={1}>PRAZO PRODUÇÃO (DIAS) *</FormLabel>
+                <Input
+                  size="sm"
+                  type="number"
+                  min="0"
+                  placeholder="5"
+                  value={formData.prazoProducao}
+                  onChange={(e) => setFormData({ ...formData, prazoProducao: e.target.value })}
+                  borderRadius="md"
+                />
+                <FormErrorMessage fontSize="3xs">{erros.prazoProducao}</FormErrorMessage>
+              </FormControl>
+            </Grid>
+          </Box>
+
+          {/* Botão de Publicação */}
+          <Flex justify="flex-end" pt={2}>
+            <Button
+              type="submit"
+              variantStyle="primary"
+              isLoading={isLoading}
+              size="md"
+              w={{ base: 'full', sm: 'auto' }}
+              px={8}
+            >
+              Publicar Peça em Lote
+            </Button>
+          </Flex>
+        </Box>
+
+        {/* COLUNA 3: Pré-visualização Idêntica ao Protótipo */}
+        <Box position="sticky" top="84px">
+          <Box bg="white" p={4} borderRadius="xl" borderWidth="1px" borderColor="gray.200" boxShadow="sm">
+            <Flex justify="space-between" align="center" mb={2}>
+              <Text fontSize="2xs" fontWeight="bold" color="gray.500">
+                PRÉ-VISUALIZAÇÃO
+              </Text>
+              <Badge colorScheme="purple" fontSize="3xs">EM TEMPO REAL</Badge>
+            </Flex>
+
+            {/* Imagem do Card */}
+            <Box borderRadius="lg" overflow="hidden" mb={3} position="relative" pt="85%" bg="gray.100">
+              <Image
+                src={formData.urlFotoPrincipal || 'https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?auto=format&fit=crop&w=800&q=80'}
+                alt="Preview"
+                position="absolute"
+                top={0}
+                left={0}
+                w="full"
+                h="full"
+                objectFit="cover"
+              />
+            </Box>
+
+            <Text fontSize="3xs" color="gray.400" mb={0.5}>
+              {formData.regiaoProducao || 'Caruaru, PE'}
+            </Text>
+
+            <Text fontSize="xs" fontWeight="bold" color="gray.900" noOfLines={1} mb={0.5}>
+              {formData.titulo || 'Nome da Peça'}
+            </Text>
+
+            <Text fontSize="3xs" color="gray.500" mb={2}>
+              {formData.nomeArtesao || 'Mestre Artesão'}
+            </Text>
+
+            <Flex justify="space-between" align="baseline" pt={2} borderTopWidth="1px" borderColor="gray.100" mb={3}>
+              <Text fontSize="sm" fontWeight="black" color="gray.900">
+                R$ {formData.preco ? formData.preco : '0,00'}
+              </Text>
+              <Badge colorScheme="green" fontSize="3xs">
+                {formData.quantidadeEstoque ? `${formData.quantidadeEstoque} UNIDADES` : 'EM LOTE'}
+              </Badge>
+            </Flex>
+
+            <Flex direction="column" gap={1.5} fontSize="3xs" color="gray.500" pt={2} borderTopWidth="1px" borderColor="gray.100">
+              <Flex align="center" gap={1.5}>
+                <Truck size={11} color="#C25E2E" />
+                <Text>
+                  {formData.prazoProducao === '0' || formData.prazoProducao === '' 
+                    ? 'Pronta entrega ou sob encomenda' 
+                    : `Produção: ${formData.prazoProducao} dias úteis`}
+                </Text>
+              </Flex>
+              <Flex align="center" gap={1.5}>
+                <ShieldCheck size={11} color="#38A169" />
+                <Text>Obra artesanal com selo de origem</Text>
+              </Flex>
+            </Flex>
+          </Box>
+        </Box>
+
+      </Grid>
+    </Box>
+  );
+}
+========================================
+ARQUIVO: src/app/painel-artesao/produtos/novo-unico/page.tsx
+========================================
+'use client';
+
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { 
+  Box, 
+  Flex, 
+  Grid, 
+  Text, 
+  Input, 
+  Select, 
+  Textarea, 
+  FormControl, 
+  FormLabel, 
+  Alert, 
+  AlertIcon, 
+  Badge,
+  useToast
+} from '@chakra-ui/react';
+import { 
+  Image as ImageIcon, 
+  Lock, 
+  Bold, 
+  Italic, 
+  List, 
+  Link2, 
+  Eye, 
+  TrendingUp, 
+  HelpCircle,
+  Check
+} from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+import { ProductCard } from '@/components/produto/ProductCard';
+import { produtosService } from '@/services/produtos.service';
+import { CriarProdutoDTO } from '@/types/produto';
+
+export default function NovoProdutoUnicoPage() {
+  const router = useRouter();
+  const toast = useToast();
+
+  const [titulo, setTitulo] = useState('');
+  const [categoria, setCategoria] = useState('Cerâmica');
+  const [regiaoProducao, setRegiaoProducao] = useState('Caruaru, PE');
+  const [descricao, setDescricao] = useState('');
+  const [materiaPrima, setMateriaPrima] = useState('');
+  const [tecnica, setTecnica] = useState('');
+  const [preco, setPreco] = useState('');
+  const [sku, setSku] = useState('');
+  const [prazoProducao, setPrazoProducao] = useState('0');
+  const [nomeArtesao, setNomeArtesao] = useState('');
+  const [guiaCuidados, setGuiaCuidados] = useState('');
+  const [imagemUrl, setImagemUrl] = useState('');
+
+  const [altura, setAltura] = useState('');
+  const [largura, setLargura] = useState('');
+  const [profundidade, setProfundidade] = useState('');
+  const [peso, setPeso] = useState('');
+
+  const [erroValidacao, setErroValidacao] = useState<string | null>(null);
+  const [carregando, setCarregando] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErroValidacao(null);
+
+    // Regra do Cenário 2 (PI4-91): Descrição obrigatória
+    if (!descricao.trim()) {
+      setErroValidacao('A descrição e história da peça é obrigatória para prosseguir com o cadastro.');
+      return;
+    }
+
+    if (!titulo.trim() || !preco || Number(preco) <= 0) {
+      setErroValidacao('Preencha o título e informe um preço válido maior que zero.');
+      return;
+    }
+
+    try {
+      setCarregando(true);
+
+      const novoId = `prod-${Date.now().toString().slice(-3)}`;
+
+      const payload: CriarProdutoDTO & { id: string } = {
+        id: novoId,
+        sku: sku.trim() || `UNI-${Date.now().toString().slice(-4)}`,
+        titulo: titulo.trim(),
+        descricao: descricao.trim(),
+        materiaPrima: materiaPrima.trim() || 'Argila regional cozida',
+        tecnica: tecnica.trim() || 'Modelagem artesanal',
+        regiaoProducao,
+        categoria,
+        preco: parseFloat(preco),
+        tipo: 'unico', // Modalidade exclusiva
+        quantidadeEstoque: 1, // Estoque fixo em 1
+        idArtesao: 'art-001',
+        nomeArtesao: nomeArtesao.trim() || 'Severino Vitalino',
+        dimensoes: {
+          altura: parseFloat(altura) || 15,
+          largura: parseFloat(largura) || 15,
+          profundidade: parseFloat(profundidade) || 10,
+          peso: parseFloat(peso) || 0.8,
+        },
+        guiaCuidados: guiaCuidados.trim() || 'Limpar com flanela seca. Proteger de umidade.',
+        galeriaImagens: imagemUrl.trim()
+          ? [imagemUrl.trim()]
+          : ['https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?auto=format&fit=crop&w=800&q=80'],
+        prazoProducao: parseInt(prazoProducao, 10) || 0,
+        ativo: true,
+      };
+
+      const novoProduto = await produtosService.criar(payload);
+
+      toast({
+        title: 'Peça Única cadastrada com sucesso!',
+        description: `${novoProduto.titulo} já está disponível na vitrine.`,
+        status: 'success',
+        duration: 3500,
+        isClosable: true,
+      });
+
+      router.push(`/produtos/${novoProduto.id}`);
+    } catch (err) {
+      setErroValidacao('Erro ao conectar com a Fake API. Verifique se o comando npm run api está ativo.');
+    } finally {
+      setCarregando(false);
+    }
+  };
+
+  return (
+    <Box maxW="7xl" mx="auto" px={{ base: 4, lg: 8 }} py={8}>
+      <Grid templateColumns={{ base: '1fr', lg: 'repeat(12, 1fr)' }} gap={8} alignItems="start">
+        
+        {/* Coluna Esquerda: Stepper / Progresso com Ícone de Check */}
+        <Box as="aside" gridColumn={{ lg: 'span 3' }}>
+          <Box bg="white" borderRadius="xl" borderWidth="1px" borderColor="gray.200" p={5} position="sticky" top="20px">
+            <Text fontWeight="bold" fontSize="sm" color="gray.900" mb={1}>
+              Cadastrar Peça Única
+            </Text>
+            <Text fontSize="2xs" color="gray.400" mb={6}>
+              Siga as seções para disponibilizar a obra no catálogo artesanal.
+            </Text>
+
+            <Flex direction="column" gap={4} fontSize="xs" color="gray.600">
+              <Flex align="center" gap={2.5} fontWeight="bold" color="gray.900">
+                <Flex w={5} h={5} borderRadius="full" bg="brand.yellow" color="brand.dark" align="center" justify="center">
+                  <Check size={12} strokeWidth={3} />
+                </Flex>
+                Informações Básicas
+              </Flex>
+              <Flex align="center" gap={2.5}>
+                <Flex w={5} h={5} borderRadius="full" bg="gray.100" color="gray.600" align="center" justify="center" fontSize="2xs">2</Flex>
+                Fotos da Peça
+              </Flex>
+              <Flex align="center" gap={2.5}>
+                <Flex w={5} h={5} borderRadius="full" bg="gray.100" color="gray.600" align="center" justify="center" fontSize="2xs">3</Flex>
+                História & Descrição
+              </Flex>
+              <Flex align="center" gap={2.5}>
+                <Flex w={5} h={5} borderRadius="full" bg="gray.100" color="gray.600" align="center" justify="center" fontSize="2xs">4</Flex>
+                Materiais & Dimensões
+              </Flex>
+              <Flex align="center" gap={2.5}>
+                <Flex w={5} h={5} borderRadius="full" bg="gray.100" color="gray.600" align="center" justify="center" fontSize="2xs">5</Flex>
+                Preço & Estoque Único
+              </Flex>
+            </Flex>
+          </Box>
+        </Box>
+
+        {/* Coluna Central: Formulário */}
+        <Box as="main" gridColumn={{ lg: 'span 6' }}>
+          {erroValidacao && (
+            <Alert status="error" borderRadius="xl" mb={6} fontSize="xs">
+              <AlertIcon />
+              <Box>
+                <Text fontWeight="bold">Atenção ao preenchimento:</Text>
+                <Text>{erroValidacao}</Text>
+              </Box>
+            </Alert>
+          )}
+
+          <form onSubmit={handleSubmit}>
+            <Flex direction="column" gap={6}>
+              
+              {/* Seção 1: Informações Básicas */}
+              <Box bg="white" borderRadius="xl" borderWidth="1px" borderColor="gray.200" p={6}>
+                <Flex justify="space-between" align="center" pb={2} mb={4} borderBottomWidth="1px" borderColor="gray.100">
+                  <Text fontWeight="bold" fontSize="sm" color="gray.900">1. Informações Básicas</Text>
+                  <Badge bg="amber.50" color="amber.800" fontSize="2xs">Peça Única</Badge>
+                </Flex>
+
+                <FormControl isRequired mb={4}>
+                  <FormLabel fontSize="xs" fontWeight="semibold">Título da Peça</FormLabel>
+                  <Input
+                    fontSize="xs"
+                    value={titulo}
+                    onChange={(e) => setTitulo(e.target.value)}
+                    placeholder="Ex: Escultura Mestre Vitalino em Barro Cozido"
+                  />
+                </FormControl>
+
+                <Grid templateColumns="repeat(2, 1fr)" gap={4} mb={4}>
+                  <FormControl>
+                    <FormLabel fontSize="xs" fontWeight="semibold">Categoria</FormLabel>
+                    <Select fontSize="xs" value={categoria} onChange={(e) => setCategoria(e.target.value)}>
+                      <option value="Cerâmica">Cerâmica</option>
+                      <option value="Madeira">Madeira</option>
+                      <option value="Têxtil & Renda">Têxtil & Renda</option>
+                      <option value="Xilogravura">Xilogravura</option>
+                      <option value="Couro">Couro</option>
+                    </Select>
+                  </FormControl>
+
+                  <FormControl>
+                    <FormLabel fontSize="xs" fontWeight="semibold">Polo de Origem</FormLabel>
+                    <Select fontSize="xs" value={regiaoProducao} onChange={(e) => setRegiaoProducao(e.target.value)}>
+                      <option value="Caruaru, PE">Caruaru, PE</option>
+                      <option value="Olinda, PE">Olinda, PE</option>
+                      <option value="Bezerros, PE">Bezerros, PE</option>
+                      <option value="Pesqueira, PE">Pesqueira, PE</option>
+                      <option value="Tracunhaém, PE">Tracunhaém, PE</option>
+                      <option value="Recife, PE">Recife, PE</option>
+                    </Select>
+                  </FormControl>
+                </Grid>
+
+                <FormControl>
+                  <FormLabel fontSize="xs" fontWeight="semibold">Nome do Artesão</FormLabel>
+                  <Input
+                    fontSize="xs"
+                    value={nomeArtesao}
+                    onChange={(e) => setNomeArtesao(e.target.value)}
+                    placeholder="Ex: Mestre Severino"
+                  />
+                </FormControl>
+              </Box>
+
+              {/* Seção 2: Fotos com destaque da capa */}
+              <Box bg="white" borderRadius="xl" borderWidth="1px" borderColor="gray.200" p={6}>
+                <Flex justify="space-between" align="center" pb={2} mb={4} borderBottomWidth="1px" borderColor="gray.100">
+                  <Text fontWeight="bold" fontSize="sm" color="gray.900">2. Fotos da Peça</Text>
+                  <Text fontSize="2xs" color="gray.400">Proporção 1:1 quadrada</Text>
+                </Flex>
+
+                <FormControl mb={4}>
+                  <FormLabel fontSize="xs" fontWeight="semibold">URL da Imagem Principal</FormLabel>
+                  <Input
+                    fontSize="xs"
+                    value={imagemUrl}
+                    onChange={(e) => setImagemUrl(e.target.value)}
+                    placeholder="https://images.unsplash.com/..."
+                  />
+                </FormControl>
+
+                <Grid templateColumns={{ base: '1fr', md: 'repeat(12, 1fr)' }} gap={4}>
+                  <Box gridColumn={{ md: 'span 7' }} position="relative" pt="80%" bg="gray.50" borderRadius="lg" borderWidth="2px" borderStyle="dashed" borderColor="gray.300" overflow="hidden">
+                    {imagemUrl ? (
+                      <Box as="img" src={imagemUrl} alt="Capa" position="absolute" top={0} left={0} w="full" h="full" objectFit="cover" />
+                    ) : (
+                      <Flex direction="column" align="center" justify="center" position="absolute" top={0} left={0} w="full" h="full" color="gray.400">
+                        <ImageIcon size={32} />
+                        <Text fontSize="2xs" mt={1}>Foto de Capa Principal</Text>
+                      </Flex>
+                    )}
+                  </Box>
+
+                  <Box gridColumn={{ md: 'span 5' }}>
+                    <Text fontSize="2xs" fontWeight="bold" color="gray.600" mb={2}>Fotos Secundárias</Text>
+                    <Grid templateColumns="repeat(3, 1fr)" gap={2}>
+                      {[1, 2, 3].map((slot) => (
+                        <Flex key={slot} pt="100%" position="relative" bg="gray.50" borderRadius="md" borderWidth="1px" borderColor="gray.200" align="center" justify="center">
+                          <Text position="absolute" top="35%" fontSize="2xs" color="gray.400">Slot {slot + 1}</Text>
+                        </Flex>
+                      ))}
+                    </Grid>
+                  </Box>
+                </Grid>
+              </Box>
+
+              {/* Seção 3: História & Descrição (PI4-91) */}
+              <Box bg="white" borderRadius="xl" borderWidth="1px" borderColor="gray.200" p={6}>
+                <Flex justify="space-between" align="center" pb={2} mb={3} borderBottomWidth="1px" borderColor="gray.100">
+                  <Box>
+                    <Text fontWeight="bold" fontSize="sm" color="gray.900">3. História & Descrição *</Text>
+                    <Text fontSize="2xs" color="gray.400">Contexto cultural e narrativa manual</Text>
+                  </Box>
+                  <Badge colorScheme="red" fontSize="2xs">Obrigatório</Badge>
+                </Flex>
+
+                <Flex gap={1} p={1.5} bg="gray.50" borderWidth="1px" borderColor="gray.200" borderTopRadius="md" color="gray.600">
+                  <Box as="button" type="button" p={1} _hover={{ bg: 'gray.200' }} borderRadius="sm"><Bold size={13} /></Box>
+                  <Box as="button" type="button" p={1} _hover={{ bg: 'gray.200' }} borderRadius="sm"><Italic size={13} /></Box>
+                  <Box as="button" type="button" p={1} _hover={{ bg: 'gray.200' }} borderRadius="sm"><List size={13} /></Box>
+                  <Box as="button" type="button" p={1} _hover={{ bg: 'gray.200' }} borderRadius="sm"><Link2 size={13} /></Box>
+                </Flex>
+
+                <Textarea
+                  rows={5}
+                  borderTopRadius={0}
+                  fontSize="xs"
+                  value={descricao}
+                  onChange={(e) => setDescricao(e.target.value)}
+                  placeholder="Descreva a história por trás desta obra artesanal exclusiva..."
+                  borderColor={erroValidacao && !descricao.trim() ? 'red.400' : 'gray.200'}
+                  bg={erroValidacao && !descricao.trim() ? 'red.50' : 'white'}
+                />
+              </Box>
+
+              {/* Seção 4: Materiais e Dimensões */}
+              <Box bg="white" borderRadius="xl" borderWidth="1px" borderColor="gray.200" p={6}>
+                <Text fontWeight="bold" fontSize="sm" color="gray.900" pb={2} mb={4} borderBottomWidth="1px" borderColor="gray.100">
+                  4. Materiais & Dimensões
+                </Text>
+
+                <Grid templateColumns="repeat(2, 1fr)" gap={4} mb={4}>
+                  <FormControl>
+                    <FormLabel fontSize="xs" fontWeight="semibold">Matéria-Prima</FormLabel>
+                    <Input fontSize="xs" value={materiaPrima} onChange={(e) => setMateriaPrima(e.target.value)} placeholder="Ex: Argila e pigmento mineral" />
+                  </FormControl>
+                  <FormControl>
+                    <FormLabel fontSize="xs" fontWeight="semibold">Técnica</FormLabel>
+                    <Input fontSize="xs" value={tecnica} onChange={(e) => setTecnica(e.target.value)} placeholder="Ex: Modelagem manual figurativa" />
+                  </FormControl>
+                </Grid>
+
+                <Grid templateColumns="repeat(4, 1fr)" gap={3} mb={4}>
+                  <FormControl>
+                    <FormLabel fontSize="2xs" color="gray.600">Altura (cm)</FormLabel>
+                    <Input fontSize="xs" type="number" value={altura} onChange={(e) => setAltura(e.target.value)} placeholder="18" />
+                  </FormControl>
+                  <FormControl>
+                    <FormLabel fontSize="2xs" color="gray.600">Largura (cm)</FormLabel>
+                    <Input fontSize="xs" type="number" value={largura} onChange={(e) => setLargura(e.target.value)} placeholder="20" />
+                  </FormControl>
+                  <FormControl>
+                    <FormLabel fontSize="2xs" color="gray.600">Prof. (cm)</FormLabel>
+                    <Input fontSize="xs" type="number" value={profundidade} onChange={(e) => setProfundidade(e.target.value)} placeholder="12" />
+                  </FormControl>
+                  <FormControl>
+                    <FormLabel fontSize="2xs" color="gray.600">Peso (kg)</FormLabel>
+                    <Input fontSize="xs" type="number" step="0.01" value={peso} onChange={(e) => setPeso(e.target.value)} placeholder="1.2" />
+                  </FormControl>
+                </Grid>
+
+                <FormControl>
+                  <FormLabel fontSize="xs" fontWeight="semibold">Instruções de Cuidados</FormLabel>
+                  <Input fontSize="xs" value={guiaCuidados} onChange={(e) => setGuiaCuidados(e.target.value)} placeholder="Ex: Limpar com flanela seca. Evitar quedas." />
+                </FormControl>
+              </Box>
+
+              {/* Seção 5: Preço & Estoque (PI4-90) */}
+              <Box bg="white" borderRadius="xl" borderWidth="1px" borderColor="gray.200" p={6}>
+                <Text fontWeight="bold" fontSize="sm" color="gray.900" pb={2} mb={4} borderBottomWidth="1px" borderColor="gray.100">
+                  5. Preço & Controle de Estoque
+                </Text>
+
+                <Grid templateColumns="repeat(3, 1fr)" gap={4}>
+                  <FormControl isRequired>
+                    <FormLabel fontSize="xs" fontWeight="semibold">Preço (R$)</FormLabel>
+                    <Input fontSize="xs" type="number" step="0.01" value={preco} onChange={(e) => setPreco(e.target.value)} placeholder="140.00" fontWeight="bold" />
+                  </FormControl>
+
+                  <FormControl>
+                    <FormLabel fontSize="xs" fontWeight="semibold" display="flex" alignItems="center" gap={1}>
+                      Estoque <Lock size={12} color="#718096" />
+                    </FormLabel>
+                    <Input fontSize="xs" value="1 un. (Travado)" isReadOnly bg="gray.100" color="gray.500" fontWeight="bold" />
+                  </FormControl>
+
+                  <FormControl>
+                    <FormLabel fontSize="xs" fontWeight="semibold">SKU</FormLabel>
+                    <Input fontSize="xs" value={sku} onChange={(e) => setSku(e.target.value)} placeholder="Ex: CAR-BAR-001" />
+                  </FormControl>
+                </Grid>
+              </Box>
+
+              {/* Botão com Cor Preta Institucional */}
+              <Flex justify="flex-end">
+                <Button type="submit" variantStyle="primary" isLoading={carregando}>
+                  Publicar Peça Única
+                </Button>
+              </Flex>
+            </Flex>
+          </form>
+        </Box>
+
+        {/* Coluna Direita: Live Preview */}
+        <Box as="aside" gridColumn={{ lg: 'span 3' }}>
+          <Box bg="white" borderRadius="xl" borderWidth="1px" borderColor="gray.200" p={5} position="sticky" top="20px">
+            <Flex justify="space-between" align="center" mb={3}>
+              <Text fontWeight="bold" fontSize="xs" color="gray.800" display="flex" alignItems="center" gap={1.5}>
+                <Eye size={14} /> Pré-visualização
+              </Text>
+              <Text fontSize="2xs" color="gray.400">Tempo real</Text>
+            </Flex>
+
+            <Box mb={4}>
+              <ProductCard
+                titulo={titulo || 'Título da Peça'}
+                preco={preco || '0'}
+                regiaoProducao={regiaoProducao}
+                nomeArtesao={nomeArtesao || 'Mestre Artesão'}
+                tipo="unico"
+                imagemUrl={imagemUrl}
+                isLink={false}
+              />
+            </Box>
+
+            <Flex direction="column" gap={3} pt={3} borderTopWidth="1px" borderColor="gray.100" fontSize="2xs" color="gray.500">
+              <Flex align="center" gap={2}>
+                <TrendingUp size={14} color="#38A169" />
+                <Text>Obras com história cultural têm maior conversão.</Text>
+              </Flex>
+              <Flex align="center" gap={2}>
+                <HelpCircle size={14} color="#D97706" />
+                <Text>Fotografias nítidas reforçam o valor artesanal.</Text>
+              </Flex>
+            </Flex>
+          </Box>
+        </Box>
+
+      </Grid>
+    </Box>
+  );
+}
+========================================
+ARQUIVO: src/app/produtos/[id]/page.tsx
+========================================
+import React from 'react';
+import Link from 'next/link';
+import { notFound } from 'next/navigation';
+import { Box, Grid, Text } from '@chakra-ui/react';
+import { ArrowLeft } from 'lucide-react';
+import { produtosService } from '@/services/produtos.service';
+import { ProductGallery } from '@/components/produto/ProductGallery';
+import { ProductInfo } from '@/components/produto/ProductInfo';
+import { ProductSpecs } from '@/components/produto/ProductSpecs';
+
+interface ProdutoPageProps {
+  params: Promise<{ id: string }>;
+}
+
+export default async function ProdutoDetalhePage({ params }: ProdutoPageProps) {
+  const { id } = await params;
+  const produto = await produtosService.obterPorId(id);
+
+  if (!produto) {
+    notFound();
+  }
+
+  return (
+    <Box maxW="7xl" mx="auto" px={{ base: 4, lg: 8 }} py={8}>
+      <Box mb={6}>
+        <Link 
+          href="/" 
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 600, color: '#718096' }}
+        >
+          <ArrowLeft size={14} /> Voltar para a vitrine
+        </Link>
+      </Box>
+
+      {/* Linha Superior: Galeria + Card de Compra */}
+      <Grid templateColumns={{ base: '1fr', lg: 'repeat(12, 1fr)' }} gap={8} mb={8} alignItems="start">
+        <Box gridColumn={{ lg: 'span 7' }}>
+          <ProductGallery imagens={produto.galeriaImagens} titulo={produto.titulo} />
+        </Box>
+
+        <Box gridColumn={{ lg: 'span 5' }} bg="white" p={6} borderRadius="2xl" borderWidth="1px" borderColor="gray.200" boxShadow="sm">
+          <ProductInfo produto={produto} />
+        </Box>
+      </Grid>
+
+      {/* Linha Inferior: História Cultural + Especificações Técnicas */}
+      <Grid templateColumns={{ base: '1fr', lg: 'repeat(12, 1fr)' }} gap={8} alignItems="start">
+        <Box gridColumn={{ lg: 'span 7' }} bg="white" p={6} borderRadius="2xl" borderWidth="1px" borderColor="gray.200" boxShadow="sm">
+          <Text fontSize="sm" fontWeight="bold" color="gray.900" mb={3} pb={2} borderBottomWidth="1px" borderColor="gray.100">
+            História & Significado Cultural
+          </Text>
+          <Text fontSize="xs" color="gray.700" lineHeight="tall">
+            {produto.descricao}
+          </Text>
+        </Box>
+
+        <Box gridColumn={{ lg: 'span 5' }}>
+          <ProductSpecs produto={produto} />
+        </Box>
+      </Grid>
+    </Box>
+  );
+}
+========================================
+ARQUIVO: src/components/feedback/EmptyState.tsx
+========================================
+
+========================================
+ARQUIVO: src/components/feedback/ErrorState.tsx
+========================================
+
+========================================
+ARQUIVO: src/components/feedback/LoadingState.tsx
+========================================
+
+========================================
+ARQUIVO: src/components/layout/Footer.tsx
+========================================
+'use client';
+
+import React from 'react';
+import Link from 'next/link';
+import { Box, Flex, Text, Grid } from '@chakra-ui/react';
+
+export function Footer() {
+  return (
+    <Box as="footer" bg="white" borderTopWidth="1px" borderColor="gray.200" mt={16} py={10}>
+      <Box maxW="7xl" mx="auto" px={{ base: 4, lg: 8 }}>
+        <Grid templateColumns={{ base: '1fr', md: '2fr 1fr 1fr' }} gap={8} mb={8}>
+          <Box>
+            <Flex align="center" gap={2} mb={3}>
+              <Flex w={6} h={6} borderRadius="md" bg="brand.yellow" color="brand.dark" align="center" justify="center" fontWeight="black" fontSize="xs">
+                ✦
+              </Flex>
+              <Text fontWeight="extrabold" fontSize="sm" color="gray.900" letterSpacing="tight">
+                PernambucoCrafts
+              </Text>
+            </Flex>
+            <Text fontSize="xs" color="gray.500" maxW="sm" lineHeight="tall">
+              Plataforma dedicada à valorização cultural e comercialização sustentável do artesanato autêntico pernambucano.
+            </Text>
+          </Box>
+
+          <Box>
+            <Text fontSize="xs" fontWeight="bold" color="gray.800" textTransform="uppercase" mb={3}>
+              Marketplace
+            </Text>
+            <Flex direction="column" gap={2} fontSize="xs" color="gray.600">
+              <Link href="/">Vitrine Cultural</Link>
+              <Link href="/artesoes">Mestres Artesãos</Link>
+              <Link href="/painel-artesao/pedidos">Painel de Pedidos</Link>
+            </Flex>
+          </Box>
+
+          <Box>
+            <Text fontSize="xs" fontWeight="bold" color="gray.800" textTransform="uppercase" mb={3}>
+              Suporte
+            </Text>
+            <Flex direction="column" gap={2} fontSize="xs" color="gray.600">
+              <Link href="#">Diretrizes da Comunidade</Link>
+              <Link href="#">Autenticidade e Selos</Link>
+              <Link href="#">Termos de Uso</Link>
+            </Flex>
+          </Box>
+        </Grid>
+
+        <Box pt={6} borderTopWidth="1px" borderColor="gray.100" textAlign="center">
+          <Text fontSize="2xs" color="gray.400">
+            © {new Date().getFullYear()} PernambucoCrafts. Todos os direitos reservados.
+          </Text>
+        </Box>
+      </Box>
+    </Box>
+  );
+}
+========================================
+ARQUIVO: src/components/layout/Navbar.tsx
+========================================
+'use client';
+
+import React from 'react';
+import Link from 'next/link';
+import { Box, Flex, Text, Badge } from '@chakra-ui/react';
+
+export function Navbar() {
+  return (
+    <header style={{ position: 'sticky', top: 0, zIndex: 50, backgroundColor: '#ffffff', borderBottom: '1px solid #E2E8F0' }}>
+      <Flex maxW="7xl" mx="auto" px={{ base: 4, lg: 8 }} h="16" align="center" justify="space-between">
+        <Flex align="center" gap={3}>
+          <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Flex w={8} h={8} borderRadius="lg" bg="brand.yellow" color="brand.dark" align="center" justify="center" fontWeight="black" fontSize="md">
+              ✦
+            </Flex>
+            <Text fontWeight="extrabold" fontSize="sm" color="gray.900" letterSpacing="tight">
+              PernambucoCrafts
+            </Text>
+          </Link>
+          <Text color="gray.300">|</Text>
+          <Badge bg="gray.100" color="gray.700" fontSize="2xs" px={2} py={0.5} borderRadius="md">
+            Painel do Artesão
+          </Badge>
+        </Flex>
+
+        <Flex align="center" gap={4}>
+          <Link href="/" style={{ fontSize: '12px', fontWeight: 600, color: '#4A5568' }}>
+            Vitrine
+          </Link>
+          <Flex align="center" gap={2}>
+            <Flex w={7} h={7} borderRadius="full" bg="brand.dark" color="white" align="center" justify="center" fontSize="xs" fontWeight="bold">
+              M
+            </Flex>
+            <Text fontSize="xs" fontWeight="semibold" color="gray.800">
+              Mestre Artesão
+            </Text>
+          </Flex>
+        </Flex>
+      </Flex>
+    </header>
+  );
+}
+========================================
+ARQUIVO: src/components/produto/ProductCard.tsx
+========================================
+'use client';
+
+import React from 'react';
+import Link from 'next/link';
+import { Box, Image, Text, Badge, Flex } from '@chakra-ui/react';
+import { MapPin } from 'lucide-react';
+
+export interface ProductCardProps {
+  id?: string;
+  titulo: string;
+  preco: number | string;
+  regiaoProducao: string;
+  nomeArtesao: string;
+  tipo: 'unico' | 'lote';
+  imagemUrl?: string;
+  isLink?: boolean;
+}
+
+export function ProductCard({
+  id,
+  titulo,
+  preco,
+  regiaoProducao,
+  nomeArtesao,
+  tipo,
+  imagemUrl,
+  isLink = true,
+}: ProductCardProps) {
+  const precoFormatado = typeof preco === 'number'
+    ? `R$ ${preco.toFixed(2).replace('.', ',')}`
+    : preco ? `R$ ${parseFloat(preco).toFixed(2).replace('.', ',')}` : 'R$ 0,00';
+
+  const CardContent = (
+    <Box
+      bg="white"
+      borderWidth="1px"
+      borderColor="gray.200"
+      borderRadius="2xl"
+      overflow="hidden"
+      boxShadow="sm"
+      transition="all 0.2s"
+      _hover={{ boxShadow: 'md' }}
+      display="flex"
+      flexDirection="column"
+      h="full"
+    >
+      <Box position="relative" w="full" pt="100%" bg="gray.100" overflow="hidden">
+        <Image
+          src={imagemUrl || 'https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?auto=format&fit=crop&w=800&q=80'}
+          alt={titulo || 'Peça artesanal'}
+          position="absolute"
+          top={0}
+          left={0}
+          w="full"
+          h="full"
+          objectFit="cover"
+        />
+        <Badge
+          position="absolute"
+          top={3}
+          left={3}
+          bg="whiteAlpha.900"
+          color="gray.800"
+          fontSize="2xs"
+          fontWeight="bold"
+          borderRadius="md"
+          px={2}
+          py={0.5}
+        >
+          {tipo === 'unico' ? 'Peça Única' : 'Lote'}
+        </Badge>
+      </Box>
+
+      <Flex direction="column" p={4} flex="1">
+        <Flex align="center" gap={1} color="gray.400" fontSize="2xs" mb={1}>
+          <MapPin size={12} color="#C25E2E" />
+          <Text>{regiaoProducao || 'Pernambuco'}</Text>
+        </Flex>
+
+        <Text fontWeight="bold" fontSize="xs" color="gray.900" noOfLines={1} mb={0.5}>
+          {titulo || 'Sem título'}
+        </Text>
+
+        <Text fontSize="2xs" color="gray.500" mb={3}>
+          Por {nomeArtesao || 'Mestre Artesão'}
+        </Text>
+
+        <Flex mt="auto" pt={2} borderTopWidth="1px" borderColor="gray.100" align="center" justify="space-between">
+          <Text fontWeight="extrabold" fontSize="sm" color="gray.900">
+            {precoFormatado}
+          </Text>
+          <Badge colorScheme="amber" variant="subtle" fontSize="2xs" borderRadius="md">
+            {tipo === 'unico' ? '1 un. disponível' : 'Em estoque'}
+          </Badge>
+        </Flex>
+      </Flex>
+    </Box>
+  );
+
+  if (isLink && id) {
+    return (
+      <Link href={`/produtos/${id}`} style={{ display: 'block', height: '100%' }}>
+        {CardContent}
+      </Link>
+    );
+  }
+
+  return CardContent;
+}
+========================================
+ARQUIVO: src/components/produto/ProductDetails.tsx
+========================================
+
+========================================
+ARQUIVO: src/components/produto/ProductFilters.tsx
+========================================
+
+========================================
+ARQUIVO: src/components/produto/ProductGallery.tsx
+========================================
+'use client';
+
+import React, { useState } from 'react';
+import { Box, Flex, Image } from '@chakra-ui/react';
+
+interface ProductGalleryProps {
+  imagens?: string[];
+  titulo: string;
+}
+
+export function ProductGallery({ imagens = [], titulo }: ProductGalleryProps) {
+  const lista = imagens.length > 0 
+    ? imagens 
+    : ['https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?auto=format&fit=crop&w=1000&q=80'];
+
+  const [imagemAtiva, setImagemAtiva] = useState(lista[0]);
+
+  return (
+    <Box w="full">
+      {/* Imagem Principal */}
+      <Box 
+        borderRadius="2xl" 
+        overflow="hidden" 
+        borderWidth="1px" 
+        borderColor="gray.200" 
+        bg="gray.50" 
+        mb={3}
+        position="relative"
+        pt="75%"
+      >
+        <Image
+          src={imagemAtiva}
+          alt={titulo}
+          position="absolute"
+          top={0}
+          left={0}
+          w="full"
+          h="full"
+          objectFit="cover"
+          fallbackSrc="https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?auto=format&fit=crop&w=1000&q=80"
+        />
+      </Box>
+
+      {/* Miniaturas com Proporção Quadrada Rígida */}
+      {lista.length > 1 && (
+        <Flex gap={3} overflowX="auto" pb={2}>
+          {lista.map((img, idx) => {
+            const isAtiva = (imagemAtiva || lista[0]) === img;
+            return (
+              <Box
+                key={idx}
+                as="button"
+                type="button"
+                onClick={() => setImagemAtiva(img)}
+                w="72px"
+                h="72px"
+                minW="72px"
+                borderRadius="lg"
+                overflow="hidden"
+                borderWidth="2px"
+                borderColor={isAtiva ? '#F2C83B' : 'transparent'}
+                opacity={isAtiva ? 1 : 0.6}
+                _hover={{ opacity: 1 }}
+                transition="all 0.2s"
+                position="relative"
+                bg="gray.100"
+              >
+                <Image
+                  src={img}
+                  alt={`Miniatura ${idx + 1}`}
+                  w="full"
+                  h="full"
+                  objectFit="cover"
+                />
+              </Box>
+            );
+          })}
+        </Flex>
+      )}
+    </Box>
+  );
+}
+========================================
+ARQUIVO: src/components/produto/ProductInfo.tsx
+========================================
+'use client';
+
+import React, { useState } from 'react';
+import { Box, Flex, Text, Badge } from '@chakra-ui/react';
+import { MapPin, ShoppingBag, ShieldCheck, Truck } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+import { Produto } from '@/types/produto';
+
+interface ProductInfoProps {
+  produto: Produto;
+}
+
+export function ProductInfo({ produto }: ProductInfoProps) {
+  const [quantidade, setQuantidade] = useState(1);
+  const isUnico = produto.tipo === 'unico';
+
+  return (
+    <Box>
+      <Flex align="center" gap={2} mb={2}>
+        <Badge bg="gray.100" color="gray.700" fontSize="2xs" px={2} py={0.5} borderRadius="md">
+          {produto.categoria}
+        </Badge>
+        <Flex align="center" gap={1} color="gray.500" fontSize="2xs">
+          <MapPin size={12} color="#C25E2E" />
+          <Text>{produto.regiaoProducao}</Text>
+        </Flex>
+      </Flex>
+
+      <Text fontSize={{ base: 'xl', md: '2xl' }} fontWeight="extrabold" color="gray.900" mb={1} lineHeight="shorter">
+        {produto.titulo}
+      </Text>
+      <Text fontSize="xs" color="gray.500" mb={4}>
+        Criado por <strong>{produto.nomeArtesao}</strong>
+      </Text>
+
+      <Box p={4} bg="gray.50" borderRadius="xl" borderWidth="1px" borderColor="gray.100" mb={6}>
+        <Text fontSize="2xs" color="gray.400" textTransform="uppercase" fontWeight="bold">Preço à vista</Text>
+        <Text fontSize="2xl" fontWeight="black" color="gray.900">
+          R$ {produto.preco.toFixed(2).replace('.', ',')}
+        </Text>
+        <Text fontSize="2xs" color="gray.500" mt={1}>
+          {isUnico ? '✦ Obra autoral exclusiva (Apenas 1 unidade existente)' : `Em estoque: ${produto.quantidadeEstoque} peças`}
+        </Text>
+      </Box>
+
+      {!isUnico && (
+        <Flex align="center" gap={3} mb={6}>
+          <Text fontSize="xs" fontWeight="semibold" color="gray.700">Quantidade:</Text>
+          <Flex align="center" borderWidth="1px" borderColor="gray.200" borderRadius="lg" bg="white">
+            <Box
+              as="button"
+              px={3}
+              py={1.5}
+              onClick={() => setQuantidade((q) => Math.max(1, q - 1))}
+              disabled={quantidade <= 1}
+              _disabled={{ opacity: 0.3, cursor: 'not-allowed' }}
+              fontWeight="bold"
+            >
+              -
+            </Box>
+            <Text px={3} py={1.5} fontSize="xs" fontWeight="bold">
+              {quantidade}
+            </Text>
+            <Box
+              as="button"
+              px={3}
+              py={1.5}
+              onClick={() => setQuantidade((q) => Math.min(produto.quantidadeEstoque, q + 1))}
+              disabled={quantidade >= produto.quantidadeEstoque}
+              _disabled={{ opacity: 0.3, cursor: 'not-allowed' }}
+              fontWeight="bold"
+            >
+              +
+            </Box>
+          </Flex>
+        </Flex>
+      )}
+
+      <Flex direction="column" gap={3} mb={6}>
+        <Button variantStyle="accent" w="full" leftIcon={<ShoppingBag size={16} />}>
+          Adicionar ao Carrinho
+        </Button>
+      </Flex>
+
+      <Flex direction="column" gap={2} pt={4} borderTopWidth="1px" borderColor="gray.100" fontSize="2xs" color="gray.500">
+        <Flex align="center" gap={2}>
+          <Truck size={14} color="#C25E2E" />
+          <Text>
+            {produto.prazoProducao === 0 
+              ? 'Pronta entrega: enviado em até 24h úteis' 
+              : `Prazo de produção e postagem: ${produto.prazoProducao} dias úteis`}
+          </Text>
+        </Flex>
+        <Flex align="center" gap={2}>
+          <ShieldCheck size={14} color="#38A169" />
+          <Text>Garantia de autenticidade artesanal de Pernambuco</Text>
+        </Flex>
+      </Flex>
+    </Box>
+  );
+}
+========================================
+ARQUIVO: src/components/produto/ProductList.tsx
+========================================
+
+========================================
+ARQUIVO: src/components/produto/ProductSpecs.tsx
+========================================
+'use client';
+
+import React from 'react';
+import { Box, Grid, Text } from '@chakra-ui/react';
+import { Produto } from '@/types/produto';
+
+interface ProductSpecsProps {
+  produto: Produto;
+}
+
+export function ProductSpecs({ produto }: ProductSpecsProps) {
+  const specs = [
+    { label: 'Matéria-Prima', valor: produto.materiaPrima },
+    { label: 'Técnica Empregada', valor: produto.tecnica },
+    { label: 'Dimensões (A x L x P)', valor: `${produto.dimensoes.altura} x ${produto.dimensoes.largura} x ${produto.dimensoes.profundidade} cm` },
+    { label: 'Peso Estimado', valor: `${produto.dimensoes.peso} kg` },
+    { label: 'Código SKU', valor: produto.sku },
+  ];
+
+  return (
+    <Box bg="white" p={6} borderRadius="2xl" borderWidth="1px" borderColor="gray.200" boxShadow="sm">
+      <Text fontSize="sm" fontWeight="bold" color="gray.900" mb={4} pb={2} borderBottomWidth="1px" borderColor="gray.100">
+        Especificações Técnicas
+      </Text>
+
+      <Grid templateColumns={{ base: '1fr', sm: 'repeat(2, 1fr)' }} gap={4} mb={6}>
+        {specs.map((item, idx) => (
+          <Box key={idx}>
+            <Text fontSize="2xs" color="gray.400" textTransform="uppercase" fontWeight="bold">
+              {item.label}
+            </Text>
+            <Text fontSize="xs" fontWeight="medium" color="gray.800" mt={0.5}>
+              {item.valor || 'Não informado'}
+            </Text>
+          </Box>
+        ))}
+      </Grid>
+
+      {produto.guiaCuidados && (
+        <Box pt={4} borderTopWidth="1px" borderColor="gray.100">
+          <Text fontSize="2xs" color="gray.400" textTransform="uppercase" fontWeight="bold" mb={1}>
+            Instruções e Cuidados
+          </Text>
+          <Text fontSize="xs" color="gray.600" lineHeight="tall">
+            {produto.guiaCuidados}
+          </Text>
+        </Box>
+      )}
+    </Box>
+  );
+}
+========================================
+ARQUIVO: src/components/ui/Button.tsx
+========================================
+'use client';
+
+import React from 'react';
+import { Button as ChakraButton, ButtonProps as ChakraButtonProps } from '@chakra-ui/react';
+
+export interface CustomButtonProps extends ChakraButtonProps {
+  variantStyle?: 'accent' | 'primary' | 'secondary' | 'danger';
+}
+
+export function Button({
+  children,
+  variantStyle = 'accent',
+  isLoading,
+  ...props
+}: CustomButtonProps) {
+  const styleVariants = {
+    accent: {
+      bg: 'brand.yellow',
+      color: 'brand.dark',
+      _hover: { bg: 'brand.yellowHover' },
+    },
+    primary: {
+      bg: 'brand.dark',
+      color: 'white',
+      _hover: { bg: 'blackAlpha.800' },
+    },
+    secondary: {
+      bg: 'gray.100',
+      color: 'gray.800',
+      _hover: { bg: 'gray.200' },
+    },
+    danger: {
+      bg: 'red.500',
+      color: 'white',
+      _hover: { bg: 'red.600' },
+    },
+  };
+
+  return (
+    <ChakraButton
+      {...styleVariants[variantStyle]}
+      fontSize="xs"
+      fontWeight="bold"
+      textTransform="uppercase"
+      letterSpacing="wider"
+      py={6}
+      px={6}
+      borderRadius="lg"
+      isLoading={isLoading}
+      {...props}
+    >
+      {children}
+    </ChakraButton>
+  );
+}
+========================================
+ARQUIVO: src/components/ui/ChakraProviders.tsx
+========================================
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { ChakraProvider } from '@chakra-ui/react';
+import { theme } from '@/styles/theme';
+
+export function ChakraProviders({ children }: { children: React.ReactNode }) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Enquanto o SSR renderiza, retorna os filhos puros sem injetar nós dinâmicos
+  if (!mounted) {
+    return <div style={{ visibility: 'hidden' }}>{children}</div>;
+  }
+
+  return (
+    <ChakraProvider theme={theme}>
+      {children}
+    </ChakraProvider>
+  );
+}
+========================================
+ARQUIVO: src/mocks/produtos.mock.ts
+========================================
+
+========================================
+ARQUIVO: src/services/produtos.service.ts
+========================================
+import { Produto, CriarProdutoDTO } from '@/types/produto';
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
+export const produtosService = {
+  async listar(): Promise<Produto[]> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/produtos`, { cache: 'no-store' });
+      if (!res.ok) return [];
+      return await res.json();
+    } catch {
+      return [];
+    }
+  },
+
+  async obterPorId(id: string): Promise<Produto | null> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/produtos/${id}`, { cache: 'no-store' });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
+    }
+  },
+
+  async criar(payload: CriarProdutoDTO): Promise<Produto> {
+    // 1. Busca todos os produtos para calcular o próximo número sequencial
+    const produtos = await this.listar();
+
+    let proximoNumero = 1;
+    produtos.forEach((prod) => {
+      const match = prod.id?.match(/^prod-(\d+)$/i);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        if (num >= proximoNumero) {
+          proximoNumero = num + 1;
+        }
+      }
+    });
+
+    const proximoId = `prod-${String(proximoNumero).padStart(3, '0')}`;
+
+    // 2. Padroniza o SKU caso venha vazio ou informado (ex: car-bar-005 ou lot-005)
+    const prefixo = payload.tipo === 'unico' ? 'car-bar' : 'lot';
+    const skuFinal = payload.sku?.trim() 
+      ? payload.sku.trim().toLowerCase() 
+      : `${prefixo}-${String(proximoNumero).padStart(3, '0')}`;
+
+    const objetoCompleto = {
+      ...payload,
+      id: proximoId,
+      sku: skuFinal,
+    };
+
+    // 3. Envia o POST com o ID explícito
+    const res = await fetch(`${API_BASE_URL}/produtos`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(objetoCompleto),
+    });
+
+    if (!res.ok) {
+      throw new Error('Falha ao registrar produto na Fake API.');
+    }
+
+    const produtoSalvo = await res.json();
+
+    // 4. Se o JSON Server v1 insistiu em trocar o ID por um hash interno,
+    // garantimos que o retorno use o ID sequencial pretendido:
+    return {
+      ...produtoSalvo,
+      id: objetoCompleto.id,
+      sku: objetoCompleto.sku,
+    };
+  },
+};
+========================================
+ARQUIVO: src/styles/theme.ts
+========================================
+import { extendTheme, type ThemeConfig } from '@chakra-ui/react';
+
+const config: ThemeConfig = {
+  initialColorMode: 'light',
+  useSystemColorMode: false,
+};
+
+export const theme = extendTheme({
+  config,
+  colors: {
+    brand: {
+      yellow: '#D4E900', // Destaque dos botões de ação do protótipo
+      yellowHover: '#c2d600',
+      dark: '#121212',   // Botões escuros e textos principais
+      clay: '#C25E2E',   // Terracota / Barro regional
+      bg: '#FAFAFA',
+      border: '#E5E7EB',
+    },
+  },
+  fonts: {
+    heading: `'Inter', -apple-system, BlinkMacSystemFont, sans-serif`,
+    body: `'Inter', -apple-system, BlinkMacSystemFont, sans-serif`,
+  },
+});
+========================================
+ARQUIVO: src/types/produto.ts
+========================================
+export type TipoProduto = 'unico' | 'lote';
+
+export interface DimensoesProduto {
+  altura: number; // em cm
+  largura: number; // em cm
+  profundidade: number; // em cm
+  peso: number; // em kg
+}
+
+export interface Produto {
+  id: string;
+  sku: string;
+  titulo: string;
+  descricao: string;
+  materiaPrima: string;
+  tecnica: string;
+  regiaoProducao: string;
+  categoria: string;
+  preco: number;
+  tipo: TipoProduto;
+  quantidadeEstoque: number;
+  idArtesao: string;
+  nomeArtesao: string;
+  dimensoes: DimensoesProduto;
+  guiaCuidados: string;
+  galeriaImagens: string[];
+  prazoProducao: number; // em dias úteis
+  ativo: boolean;
+  dataCriacao?: string;
+}
+
+export type CriarProdutoDTO = Omit<Produto, 'id'> & {
+  id?: string;
+};
+export type AtualizarProdutoDTO = Partial<Omit<Produto, 'id' | 'idArtesao'>>;
+========================================
+ARQUIVO: fake-api/db.json (Amostra)
+========================================
+{
+  "produtos": [
+    {
+      "id": "prod-001",
+      "sku": "CAR-BAR-001",
+      "titulo": "Trio de Forrozeiros em Cerâmica de Barro — Edição Caruaru",
+      "descricao": "Conjunto tradicional esculpido à mão em barro cozido com acabamento policromado fosco. Cada figura representa os mestres do baião: sanfona de oito baixos, zabumba de couro e triângulo de ferro. Uma homenagem viva ao legado do Alto do Moura.",
+      "materiaPrima": "Argila regional e pigmento mineral",
+      "tecnica": "Modelagem manual figurativa vitrificada",
+      "regiaoProducao": "Caruaru, PE",
+      "categoria": "Cerâmica Tradicional",
+      "preco": 140,
+      "tipo": "unico",
+      "quantidadeEstoque": 1,
+      "idArtesao": "art-001",
+      "nomeArtesao": "Severino Vitalino",
+      "dimensoes": {
+        "altura": 22,
+        "largura": 16,
+        "profundidade": 12,
+        "peso": 1.4
+      },
+      "guiaCuidados": "Limpar delicadamente com pano de algodão seco ou pincel macio. Não submergir em água nem usar produtos abrasivos. Evitar quedas.",
+      "galeriaImagens": [
+        "https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?auto=format&fit=crop&w=1000&q=80",
+        "https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?auto=format&fit=crop&w=1000&q=80",
+        "https://images.unsplash.com/photo-1581783342308-f792dbdd27c5?auto=format&fit=crop&w=1000&q=80",
+        "https://images.unsplash.com/photo-1615529182904-14819c35db37?auto=format&fit=crop&w=1000&q=80"
+      ],
+      "prazoProducao": 0,
+      "ativo": true
+    },
+    {
+      "id": "prod-002",
+      "sku": "BEZ-XIL-002",
+      "titulo": "Xilogravura O Pavão Misterioso",
+      "descricao": "Matriz em umburana impressa em papel artesanal.",
+      "materiaPrima": "Madeira de umburana e papel craft",
+      "tecnica": "Xilogravura",
+      "regiaoProducao": "Bezerros, PE",
+      "categoria": "Gravura",
+      "preco": 85,
+      "tipo": "lote",
+      "quantidadeEstoque": 0,
+      "idArtesao": "art-002",
+      "nomeArtesao": "Escola J. Borges",
+      "dimensoes": {
+        "altura": 40,
+        "largura": 30,
+        "profundidade": 0.2,
+        "peso": 0.1
+      },
+      "guiaCuidados": "Manter longe de luz solar direta.",
+      "galeriaImagens": [
+        "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&w=1000&q=80"
+      ],
+      "prazoProducao": 3,
+      "ativo": false
+    },
+    {
+      "id": "prod-003",
+      "sku": "UNI-6686",
+      "titulo": "Trio de Pífanos em Barro Figurativo",
+      "descricao": "Conjunto escultórico autoral que homenageia as tradicionais bandas de pífano do agreste pernambucano, modelado à mão em argila pura e finalizado com pintura crua.",
+      "materiaPrima": "Barro massapê cozido",
+      "tecnica": "Modelagem manual figurativa",
+      "regiaoProducao": "Caruaru, PE",
+      "categoria": "Cerâmica",
+      "preco": 220,
+      "tipo": "unico",
+      "quantidadeEstoque": 1,
+      "idArtesao": "art-001",
+      "nomeArtesao": "Mestre Vitalino Neto",
+      "dimensoes": {
+        "altura": 22,
+        "largura": 18,
+        "profundidade": 14,
+        "peso": 1.5
+      },
+      "guiaCuidados": "Limpar delicadamente com pincel seco. Manter longe de umidade.",
