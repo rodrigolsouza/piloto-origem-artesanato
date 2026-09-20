@@ -18,9 +18,11 @@ export function Navbar() {
             </Text>
           </Link>
           <Text color="gray.300">|</Text>
-          <Badge bg="gray.100" color="gray.700" fontSize="2xs" px={2} py={0.5} borderRadius="md">
-            Painel do Artesão
-          </Badge>
+          <Link href="/painel-artesao/produtos">
+            <Badge bg="gray.100" color="gray.700" fontSize="2xs" px={2} py={1} borderRadius="md" _hover={{ bg: 'gray.200' }} cursor="pointer">
+              Painel do Artesão
+            </Badge>
+          </Link>
         </Flex>
 
         <Flex align="center" gap={4}>

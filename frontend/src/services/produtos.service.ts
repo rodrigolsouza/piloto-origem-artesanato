@@ -75,4 +75,20 @@ export const produtosService = {
       sku: objetoCompleto.sku,
     };
   },
+
+  async atualizar(id: string, payload: Partial<CriarProdutoDTO>): Promise<Produto> {
+    const res = await fetch(`${API_BASE_URL}/produtos/${id}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      throw new Error('Falha ao atualizar produto na Fake API.');
+    }
+
+    return await res.json();
+  },
 };
